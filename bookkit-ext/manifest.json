@@ -1,0 +1,14 @@
+{
+   "content_scripts": [ {
+   		"css": [ "bookkit-ext.css" ],
+      "js": [ "jquery-2.1.4.min.js", "bookkit-ext.js" ],
+      "matches": [ "https://uuos9.plus4u.net/uu-dockitg01-main/*", "https://docs.plus4u.net/book/*" ]
+   } ],
+   "description": "Bookkit usefull links",
+   "manifest_version": 2,
+   "name": "Bookkit usefull links",
+   "permissions": [ ],
+   "page_action": {
+	 },
+   "version": "0.1.0"
+}
