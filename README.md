@@ -12,6 +12,6 @@ It will add useful links into page.
 ## Install from package
 Unfortunatelly this it not working because this extensions is not on published on Chrome Web Store yet. $5 payment is required.
 
-Download [bookkit-ext.crx](bookkit-ext.crx) and drag-and-drop it into Chrome and confim plugin installation.
+Download [uubookkit-ext.crx](uubookkit-ext.crx) and drag-and-drop it into Chrome and confim plugin installation.
 
 
