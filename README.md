@@ -10,7 +10,7 @@ It will add useful links into page.
 2. Install User script from this URL: [uubookkit-ext.user.js](https://github.com/PetrHavelka/uubookkit-ext/raw/master/uubookkit-ext.user.js)
 
 # Configuration
-- in case of [uuDockitHelper](https://github.com/jiridudekusy/uuDockitHelper) is not executed on different IP or port please edit the `mdUrl` in script. 
+- In case of [uuDockitHelper](https://github.com/jiridudekusy/uuDockitHelper) is executed on different IP or port then http://localhost:4323/vendor-app-subapp/0-0/editor please edit the `mdUrl` in script. 
 
 # Chrome extension for uuBookKit - depricated
 
