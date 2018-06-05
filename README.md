@@ -3,7 +3,7 @@ It will add useful links into page.
 - page title is link to Knowledge Base
 - pencil icon for edit each section is added (if user has permission)
 
-# Install as a User Sciprt
+# Install as a User Script - Tampermonkey
 1. Add https://tampermonkey.net/ into your browser
 2. Install User script from this URL: [uubookkit-ext.user.js](https://github.com/PetrHavelka/uubookkit-ext/raw/master/uubookkit-ext.user.js)
 
