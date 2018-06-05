@@ -1,13 +1,13 @@
 // ==UserScript==
-// @name         uuBookKit user script
-// @namespace    http://phx.cz/uu/
-// @version      0.1.0
+// @name         uuBookKit
+// @namespace    https://github.com/PetrHavelka/uubookkit-ext
+// @version      0.1.1
 // @description  Add usefull links to page
 // @author       Petr Havelka
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
 // @match        https://docs.plus4u.net/book*
 // @grant        GM_addStyle
-// @require http://code.jquery.com/jquery-2.1.4.min.js
+// @require      http://code.jquery.com/jquery-2.1.4.min.js
 // ==/UserScript==
 
 GM_addStyle(
