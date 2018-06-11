@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.2.0
+// @version      0.3.0
 // @description  Add usefull links to page
 // @author       Petr Havelka
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -42,9 +42,6 @@ GM_addStyle(`
 
     // init of each bookkit page
     let initPage = function() {
-        // no rights
-        if (!$(".uu-bookkit-control-bar-executives").length) return;
-
         let page = $(".uu-bookkit-page");
         // if page not ready do it later
         if (!page.length) {
@@ -55,12 +52,21 @@ GM_addStyle(`
 
         // update HTML - add icons and links
         let editIcon = 'uu5-bricks-icon mdi mdi-lead-pencil';
+
+        // no rights
+        if ($(".uu-bookkit-control-bar-executives").length) {
+            $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header")
+                .append('<span class="bookkit-ext-edit ' + editIcon + '" data-link="Upravit strukturu obsahu"></span>')
+
+
+            $(".uu-bookkit-page h2.uu5-bricks-header").each(function (i) {
+                $(this).append('<span class="bookkit-ext-edit ' + editIcon + '" data-link="Upravit obsah - sekce ' + i + '"></span>');
+            });
+        }
+
         $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header")
-            .append('<span class="bookkit-ext-edit ' + editIcon + '" data-link="Upravit strukturu obsahu"></span>')
             .append('<a href="' + mdUrl + '?page='+ encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
-        $(".uu-bookkit-page h2.uu5-bricks-header").each(function (i) {
-            $(this).append('<span class="bookkit-ext-edit ' + editIcon + '" data-link="Upravit obsah - sekce ' + i + '"></span>');
-        });
+
 
         // mark page as ready
         page.addClass("bookkit-ext-page-done");
