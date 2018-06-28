@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.5.0
+// @version      0.5.1
 // @description  Add usefull links to page
 // @author       Petr Havelka
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -123,7 +123,7 @@ GM_addStyle(`
     }
 
     // update HTML - add icons and links
-    let refreshIcon = '<span class="uu5-bricks-icon plus4u5 plus4u5-refresh bookkit-ext-refresh"></span>';
+    let refreshIcon = '<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-refresh"></span>';
     title.after(refreshIcon);
 
     $(".plus4u5-app-menu-link").each(function(item) {
