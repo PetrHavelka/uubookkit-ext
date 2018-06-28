@@ -5,7 +5,10 @@ It will add useful links into page.
 - MD link for edit document in [uuDockitHelper](https://github.com/jiridudekusy/uuDockitHelper) is added (if used has permissions)
 - pencil icon for edit each section is added (if user has permission)
 - ESC key will close edit window
-- Ctrl+Enter key will save edit window 
+- Menu
+  - Long names in menu do not wrap
+  - On mose hover is full name visible (overflow)
+  - Specified menu items are colored (Business, uuSubApp, *Stores, uuCMD) 
 
 # Install as a User Script - Tampermonkey
 1. Add https://tampermonkey.net/ into your browser

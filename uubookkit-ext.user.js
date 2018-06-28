@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.4.0
+// @version      0.5.0
 // @description  Add usefull links to page
 // @author       Petr Havelka
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -22,7 +22,7 @@ GM_addStyle(`
 }
 
 .bookkit-ext-refresh {
-  font-size: 19px;
+  font-size: 22px;
 }
 
 .uu-bookkit-book-top-text {
@@ -35,6 +35,31 @@ GM_addStyle(`
   font-size: 19px;
   margin-left: 0.5em;
 }
+
+.bookkit-ext-uusubapp {
+  background-color: #EFFDD6;
+}
+
+.bookkit-ext-business {
+  background-color: #DFF5FF;
+}
+
+.bookkit-ext-cmd {
+  background-color: #fffadf;
+}
+
+.bookkit-ext-store {
+  background-color: #ffeadf;
+}
+
+.uu5-bricks-page-column:hover {
+  overflow-x: visible;
+}
+
+.plus4u5-app-go-to-page-link {
+  white-space: nowrap;
+}
+
 `);
 
 (function () {
@@ -101,6 +126,22 @@ GM_addStyle(`
     let refreshIcon = '<span class="uu5-bricks-icon plus4u5 plus4u5-refresh bookkit-ext-refresh"></span>';
     title.after(refreshIcon);
 
+    $(".plus4u5-app-menu-link").each(function(item) {
+      let menuText = $(this).text();
+      if (menuText.includes("uuSubApp")) {
+        $(this).addClass("bookkit-ext-uusubapp");
+      }
+      if (menuText.includes("Business Mod")) {
+        $(this).addClass("bookkit-ext-business");
+      }
+      if (menuText.includes("uuCMD")) {
+        $(this).addClass("bookkit-ext-cmd");
+      }
+      if (menuText.includes("Store")) {
+        $(this).addClass("bookkit-ext-store");
+      }
+    });
+
     // init bookkit page
     initPage();
   };
@@ -117,7 +158,7 @@ GM_addStyle(`
         });
       }
       origOpen.apply(this, arguments);
-    }
+    };
   };
 
   // do inject
@@ -171,7 +212,7 @@ GM_addStyle(`
 
     // click to page title is linking to knowledge base
     if ($(e.target).parent().hasClass("uu-bookkit-book-top-text")) {
-      window.location.href = "https://docs.plus4u.net/book";
+      window.open('https://docs.plus4u.net/book', '_blank');
     }
   });
 
@@ -181,10 +222,12 @@ GM_addStyle(`
       click($(".uu5-bricks-modal-l .uu5-bricks-modal-header-close"));
     }
 
+    /* not working correctly
     // save edit dialog on CTRL + ENTER
     if (e.ctrlKey && e.keyCode === 13) {
       click($(".uu5-bricks-modal-l .color-schema-primary.uu5-bricks-button"));
     }
+    */
   });
 
 })();
