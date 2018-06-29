@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.5.1
+// @version      0.5.2
 // @description  Add usefull links to page
 // @author       Petr Havelka
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -54,6 +54,15 @@ GM_addStyle(`
 
 .uu5-bricks-page-column:hover {
   overflow-x: visible;
+}
+
+.uu5-bricks-page-column:hover .uu5-bricks-link {
+  background-color: inherit;
+}
+
+.uu5-bricks-page-column:hover .plus4u5-app-menu-link .plus4u5-app-go-to-page-link {
+  width: auto;
+  z-index: 0;
 }
 
 .plus4u5-app-go-to-page-link {
