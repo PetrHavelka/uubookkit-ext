@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.5.2
+// @version      0.5.3
 // @description  Add usefull links to page
 // @author       Petr Havelka
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -143,7 +143,7 @@ GM_addStyle(`
       if (menuText.includes("Business Mod")) {
         $(this).addClass("bookkit-ext-business");
       }
-      if (menuText.includes("uuCMD")) {
+      if (menuText.includes("uuCMD") || menuText.includes("uuCmd")) {
         $(this).addClass("bookkit-ext-cmd");
       }
       if (menuText.includes("Store")) {
