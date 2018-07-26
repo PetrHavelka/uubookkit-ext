@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.5.3
+// @version      0.6.0
 // @description  Add usefull links to page
 // @author       Petr Havelka
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -98,13 +98,13 @@ GM_addStyle(`
     // if i have rights for edit
     if ($(".uu-bookkit-control-bar-executives").length) {
       pageTitle.append('<span class="bookkit-ext-edit ' + editIcon + '" data-link="Upravit strukturu obsahu"></span>');
-
+        
       $(".uu-bookkit-page h2.uu5-bricks-header, .uu-bookkit-page h3.uu5-bricks-header").each(function (i) {
         // find correct index
         let title = $(this).text();
         if (currentPageData && currentPageData.body) {
           for (let a = 0; a < currentPageData.body.length; a++) {
-            if (currentPageData.body[a].includes('header="' + title + '"')) {
+            if (currentPageData.body[a].content.includes('header="' + title + '"')) {
               i = a;
               break;
             }
