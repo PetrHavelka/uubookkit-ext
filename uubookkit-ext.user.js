@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.6.1
+// @version      0.6.2
 // @description  Add usefull links to page
 // @author       Petr Havelka
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -191,10 +191,10 @@ GM_addStyle(`
   let clickLinkByName = function (name) {
     // console.log('Click link by name = "' + name + '"')
 
-    // click to "Obsah str·nky" to expand menu
+    // click to "Obsah str√°nky" to expand menu
     $('button.uu5-bricks-dropdown-button').each(function () {
       let item = $(this);
-      if (item.text() == "Obsah str·nky") item.click();
+      if (item.text() == "Obsah str√°nky") item.click();
     });
 
     // find all linsk in controll menu
