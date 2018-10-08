@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.6.2
+// @version      0.6.3
 // @description  Add usefull links to page
-// @author       Petr Havelka
+// @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @match        https://docs.plus4u.net/book*
@@ -89,6 +89,7 @@ GM_addStyle(`
     if (page.hasClass("bookkit-ext-page-done")) {
       $(".bookkit-ext-edit").remove();
       $(".bookkit-ext-md").remove();
+      $(".bookkit-ext-copy-scenario-panel").remove();
     }
 
     // update HTML - add icons and links
@@ -118,6 +119,9 @@ GM_addStyle(`
 
     // add MD link
     pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
+
+    // add copy scenarios
+    initCopyScenarios();
 
     // mark page as ready
     page.addClass("bookkit-ext-page-done");
@@ -245,5 +249,99 @@ GM_addStyle(`
     }
     */
   });
+
+  // Copy scenarios
+
+  const COMMENT_TYPE = "// ";
+  const WORD_WRAP_CHARS = 150;
+
+  var copyContent = "";
+
+  var copyToClipBoard = (content) => {
+      let textArea = document.createElement("textarea");
+      textArea.innerHTML = content;
+      document.body.appendChild(textArea);
+
+      let range,
+      selection;
+
+      if (navigator.userAgent.match(/ipad|iphone/i)) {
+          range = document.createRange();
+          range.selectNodeContents(textArea);
+          selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          textArea.setSelectionRange(0, 999999);
+      } else {
+          textArea.select();
+      }
+
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+  };
+
+  var decodeSpecialChars = (input) => {
+      var txt = document.createElement("textarea");
+      txt.innerHTML = input;
+      return txt.value;
+  };
+
+  var walkOverList = (olElement, prefix) => {
+      let stepNumber = 1;
+
+      // walk over li elements
+      olElement.childNodes.forEach(liElement => {
+          let itemTextContent = liElement.innerHTML.replace(/(\<[ou]l(\s*.*)*\/[ou]l\>)/gm, "").replace(/(\<[^\>]+\>)/gm, "");
+          let stepLine = prefix + stepNumber + " - " + decodeSpecialChars(itemTextContent);
+
+          // wrap after WORD_WRAP_CHARS chars
+          while (stepLine.length > WORD_WRAP_CHARS) {
+              for (let i = WORD_WRAP_CHARS ; i > 0 ; i--) {
+                  if (stepLine.substr(i, 1).match(/^\s+$/)) {
+                      copyContent += COMMENT_TYPE + stepLine.substr(0, i).trim() + "\n";
+                      stepLine = stepLine.substr(i).trim();
+                      break;
+                  }
+              }
+          }
+
+          copyContent += COMMENT_TYPE + stepLine.trim() + "\n";
+
+          let innerOlElements = liElement.querySelectorAll("ol, ul");
+          if (innerOlElements.length > 0) {
+              innerOlElements.forEach((innerUlOlElement) =>  {
+                  walkOverList(innerUlOlElement, prefix + stepNumber + ".");
+              });
+          }
+          stepNumber++
+      });
+  }
+
+  var initCopyScenarios = () => {
+    document.querySelectorAll(".uu5-bricks-section > .uu5-bricks-ol").forEach(olElement => {
+        olElement.insertAdjacentHTML('beforebegin', `<div class="bookkit-ext-copy-scenario-panel uu5-common-div uu-uuapp-designkit-embedded-text-header-bar">
+            <button class="bookkit-ext-copy-scenario-button uu5-bricks-button uu5-bricks-button-m uu5-bricks-button-transparent" type="button">
+                <span class="uu5-bricks-icon mdi mdi-content-copy"></span>
+                <span class="bookkit-ext-copy uu5-bricks-span uu5-bricks-lsi-item">Kopírovat programový komentář</span>
+            </button>
+        </div>`);
+
+        olElement.previousElementSibling.querySelectorAll(".bookkit-ext-copy-scenario-button")[0].addEventListener("click", () => {
+            let commentPrefix = "";
+            let heading = olElement.parentElement.querySelectorAll("h1, h2, h3, h4, h5, h6")[0].textContent;
+            if (heading.toLowerCase() === "happy day scenario") {
+                commentPrefix = "HDS ";
+            } else {
+                let prefixToken = heading.split(/\s*\-/)[0];
+                if (prefixToken) {
+                    commentPrefix = prefixToken + " ";
+                }
+            }
+
+            walkOverList(olElement, commentPrefix);
+            copyToClipBoard(copyContent);
+        });
+    });
+  };
 
 })();
