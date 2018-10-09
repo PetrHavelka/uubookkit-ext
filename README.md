@@ -7,7 +7,7 @@ It will add useful links into page.
 - ESC key will close edit window
 - Menu
   - Long names in menu do not wrap
-  - On mose hover is full name visible (overflow)
+  - Enable to drag'n'drop resize left navigation.
   - Specified menu items are colored (Business, uuSubApp, *Stores, uuCMD)
 - Scenarios
   - Add option to copy HDS and alternative scenarios with ordering numbers as a program comments into clipboard.
