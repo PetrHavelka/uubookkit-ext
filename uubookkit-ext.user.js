@@ -308,20 +308,20 @@ GM_addStyle(`
       // walk over li elements
       olElement.childNodes.forEach(liElement => {
           let itemTextContent = liElement.innerHTML.replace(/(\<[ou]l(\s*.*)*\/[ou]l\>)/gm, "").replace(/(\<[^\>]+\>)/gm, "");
-          let stepLine = prefix + stepNumber + " - " + decodeSpecialChars(itemTextContent);
+          let stepLine = prefix + stepNumber + " - " + decodeSpecialChars(itemTextContent).replace(/\s+/gm, " ").trim();
 
           // wrap after WORD_WRAP_CHARS chars
           while (stepLine.length > WORD_WRAP_CHARS) {
               for (let i = WORD_WRAP_CHARS ; i > 0 ; i--) {
                   if (stepLine.substr(i, 1).match(/^\s+$/)) {
-                      copyContent += COMMENT_TYPE + stepLine.substr(0, i).trim() + "\n";
-                      stepLine = stepLine.substr(i).trim();
+                      copyContent += COMMENT_TYPE + stepLine.substr(0, i).replace(/^\s+|\s+$/g, "") + "\n";
+                      stepLine = stepLine.substr(i).replace(/^\s+|\s+$/gm, "");
                       break;
                   }
               }
           }
 
-          copyContent += COMMENT_TYPE + stepLine.trim() + "\n";
+          copyContent += COMMENT_TYPE + stepLine.replace(/^\s+|\s+$/gm, "") + "\n";
 
           let innerOlElements = liElement.querySelectorAll("ol, ul");
           if (innerOlElements.length > 0) {
@@ -351,7 +351,7 @@ GM_addStyle(`
             } else {
                 let prefixToken = heading.split(/\s*\-/)[0];
                 if (prefixToken) {
-                    copyContent += COMMENT_TYPE + heading.trim() + "\n";
+                    copyContent = COMMENT_TYPE + heading.replace(/^\s+|\s+$/gm, "") + "\n";
                     commentPrefix = prefixToken + " ";
                 }
             }
