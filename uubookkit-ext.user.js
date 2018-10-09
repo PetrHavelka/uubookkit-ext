@@ -9,6 +9,13 @@
 // @match        https://docs.plus4u.net/book*
 // @grant        GM_addStyle
 // @require      http://code.jquery.com/jquery-2.1.4.min.js
+// @require      https://code.jquery.com/ui/1.12.1/jquery-ui.js
+// @resource     jqueryUiCss https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css
+// @grant        GM_getResourceText
+// ==/UserScript==
+
+var jqueryUiCssText = GM_getResourceText ("jqueryUiCss");
+GM_addStyle (jqueryUiCssText);
 // ==/UserScript==
 
 let mdUrl = 'http://localhost:4323/vendor-app-subapp/0-0/editor';
@@ -52,8 +59,13 @@ GM_addStyle(`
   background-color: #ffeadf;
 }
 
-.uu5-bricks-page-column:hover {
-  overflow-x: visible;
+.plus4u5-app-page-left-wrapper {
+  overflow: hidden !important;
+}
+
+.plus4u5-app-page-left-wrapper .ui-resizable-e {
+  width: 7px;
+  background: lightgray;
 }
 
 .uu5-bricks-page-column:hover .uu5-bricks-link {
@@ -61,7 +73,7 @@ GM_addStyle(`
 }
 
 .uu5-bricks-page-column:hover .plus4u5-app-menu-link .plus4u5-app-go-to-page-link {
-  width: auto;
+  min-width: 100%;
   z-index: 0;
 }
 
@@ -99,7 +111,7 @@ GM_addStyle(`
     // if i have rights for edit
     if ($(".uu-bookkit-control-bar-executives").length) {
       pageTitle.append('<span class="bookkit-ext-edit ' + editIcon + '" data-link="Upravit strukturu obsahu"></span>');
-        
+
       $(".uu-bookkit-page h2.uu5-bricks-header, .uu-bookkit-page h3.uu5-bricks-header").each(function (i) {
         // find correct index
         let title = $(this).text();
@@ -122,6 +134,9 @@ GM_addStyle(`
 
     // add copy scenarios
     initCopyScenarios();
+
+    // add resizable left navigation
+    initResizableLeftNavigation()
 
     // mark page as ready
     page.addClass("bookkit-ext-page-done");
@@ -154,6 +169,7 @@ GM_addStyle(`
         $(this).addClass("bookkit-ext-store");
       }
     });
+
 
     // init bookkit page
     initPage();
@@ -327,6 +343,7 @@ GM_addStyle(`
         </div>`);
 
         olElement.previousElementSibling.querySelectorAll(".bookkit-ext-copy-scenario-button")[0].addEventListener("click", () => {
+            copyContent = "";
             let commentPrefix = "";
             let heading = olElement.parentElement.querySelectorAll("h1, h2, h3, h4, h5, h6")[0].textContent;
             if (heading.toLowerCase() === "happy day scenario") {
@@ -334,6 +351,7 @@ GM_addStyle(`
             } else {
                 let prefixToken = heading.split(/\s*\-/)[0];
                 if (prefixToken) {
+                    copyContent += COMMENT_TYPE + heading.trim() + "\n";
                     commentPrefix = prefixToken + " ";
                 }
             }
@@ -342,6 +360,26 @@ GM_addStyle(`
             copyToClipBoard(copyContent);
         });
     });
+  };
+
+  // Resizable Left Navigation
+  const RES_LEFT_NAV_KEY = "BOOKIT_EXT_RES_LEFT_NAV_"+ location.hostname;
+  var initResizableLeftNavigation = () => {
+      let leftNavigationElement = $(".plus4u5-app-page-left-wrapper.uu5-bricks-page-left");
+      let leftWidth = localStorage.getItem(RES_LEFT_NAV_KEY);
+
+      if(leftWidth) {
+          leftNavigationElement.width(leftWidth);
+      }
+
+      if (!leftNavigationElement.data("initialized")) {
+          leftNavigationElement.data("initialized", true);
+          leftNavigationElement.resizable({
+              option: {"handles": "e"},
+              resize: ( event, ui ) => { localStorage.setItem(RES_LEFT_NAV_KEY, ui.size.width); },
+              containment: 'document'
+          });
+      }
   };
 
 })();
