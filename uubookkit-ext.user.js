@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.6.3
+// @version      0.6.4
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -27,60 +27,47 @@ GM_addStyle(`
   font-size: 24px;
   cursor: pointer;
 }
-
 .bookkit-ext-refresh {
   font-size: 22px;
 }
-
 .uu-bookkit-book-top-text {
   cursor: pointer;
 }
-
 .bookkit-ext-md {
   color: black;
   text-decoration: none;
   font-size: 19px;
   margin-left: 0.5em;
 }
-
 .bookkit-ext-uusubapp {
   background-color: #EFFDD6;
 }
-
 .bookkit-ext-business {
   background-color: #DFF5FF;
 }
-
 .bookkit-ext-cmd {
   background-color: #fffadf;
 }
-
 .bookkit-ext-store {
   background-color: #ffeadf;
 }
-
 .plus4u5-app-page-left-wrapper {
   overflow: hidden !important;
 }
-
 .plus4u5-app-page-left-wrapper .ui-resizable-e {
   width: 7px;
   background: lightgray;
 }
-
 .uu5-bricks-page-column:hover .uu5-bricks-link {
   background-color: inherit;
 }
-
 .uu5-bricks-page-column:hover .plus4u5-app-menu-link .plus4u5-app-go-to-page-link {
   min-width: 100%;
   z-index: 0;
 }
-
 .plus4u5-app-go-to-page-link {
   white-space: nowrap;
 }
-
 `);
 
 (function () {
@@ -110,7 +97,7 @@ GM_addStyle(`
     let pageTitle = $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header");
     // if i have rights for edit
     if ($(".uu-bookkit-control-bar-executives").length) {
-      pageTitle.append('<span class="bookkit-ext-edit ' + editIcon + '" data-link="Upravit strukturu obsahu"></span>');
+      pageTitle.append('<span class="bookkit-ext-edit ' + editIcon + '" data-link-cs="Upravit strukturu obsahu" data-link-en="Update Content Structure"></span>');
 
       $(".uu-bookkit-page h2.uu5-bricks-header, .uu-bookkit-page h3.uu5-bricks-header").each(function (i) {
         // find correct index
@@ -124,7 +111,8 @@ GM_addStyle(`
           }
         }
         $(this).append('<span class="bookkit-ext-edit ' + editIcon
-            + '" data-link="Upravit obsah - sekce ' + i
+            + '" data-link-cs="Upravit obsah - sekce ' + i
+            + '" data-link-en="Update Content - Section ' + i
             + '" title="Upravit obsah - sekce ' + i + '"></span>');
       });
     }
@@ -145,7 +133,7 @@ GM_addStyle(`
   // first init of whole webpage
   let firstInit = function () {
     let title = $(".uu-bookkit-book-top-text");
-    // if page not loaded yer - do it later
+    // if page not loaded yet - do it later
     if (!title.length) {
       setTimeout(firstInit, 3000);
     }
@@ -214,7 +202,7 @@ GM_addStyle(`
     // click to "Obsah stránky" to expand menu
     $('button.uu5-bricks-dropdown-button').each(function () {
       let item = $(this);
-      if (item.text() == "Obsah stránky") item.click();
+      if (item.text() == "Obsah stránky" || item.text() == "Page body") item.click();
     });
 
     // find all linsk in controll menu
@@ -241,8 +229,12 @@ GM_addStyle(`
 
     // is it click to edit button?
     if ($(e.target).hasClass("bookkit-ext-edit")) {
+      // detect language
+      var lang = $(".uu5-bricks-page-system-layer .uu5-bricks-language-selector-code-text").text();
+      // console.log(lang);
+
       // click to particular link in control menu
-      clickLinkByName($(e.target).data("link"));
+      clickLinkByName($(e.target).data("link-" + lang));
       return;
     }
 
