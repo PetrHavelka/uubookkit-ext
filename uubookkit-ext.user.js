@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.6.4
+// @version      0.6.5
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -67,6 +67,19 @@ GM_addStyle(`
 }
 .plus4u5-app-go-to-page-link {
   white-space: nowrap;
+}
+/* Full step number */
+.uu5-bricks-section ol.uu5-bricks-ol {
+  counter-reset: item;
+  list-style: none;
+}
+.uu5-bricks-section ol.uu5-bricks-ol > li:before {
+  content: counters(item, ".") ".";
+  counter-increment: item;
+  padding-right:.75em
+}
+.uu5-bricks-section > ol > li:before {
+  display:run-in;
 }
 `);
 
