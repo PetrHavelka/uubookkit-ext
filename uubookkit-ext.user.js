@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.6.5
+// @version      0.6.6
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -243,7 +243,7 @@ GM_addStyle(`
     // is it click to edit button?
     if ($(e.target).hasClass("bookkit-ext-edit")) {
       // detect language
-      var lang = $(".uu5-bricks-page-system-layer .uu5-bricks-language-selector-code-text").text();
+      var lang = $(".uu-bookkit-book-top .uu5-bricks-language-selector-code-text").text();
       // console.log(lang);
 
       // click to particular link in control menu
