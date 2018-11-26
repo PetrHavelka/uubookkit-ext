@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.6.6
+// @version      0.7.0
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -37,7 +37,14 @@ GM_addStyle(`
   color: black;
   text-decoration: none;
   font-size: 19px;
-  margin-left: 0.5em;
+  margin-left: 0.8em;
+}
+.bookkit-ext-copy-jira-link {
+  color: black;
+  text-decoration: none;
+  font-size: 19px;
+  margin-left: 0.8em;
+  cursor: pointer;
 }
 .bookkit-ext-uusubapp {
   background-color: #EFFDD6;
@@ -96,18 +103,23 @@ GM_addStyle(`
     // if page not ready do it later
     if (!page.length) {
       setTimeout(initPage, 1000);
+      return;
     }
+
     // page is already done - remove all links
     if (page.hasClass("bookkit-ext-page-done")) {
       $(".bookkit-ext-edit").remove();
       $(".bookkit-ext-md").remove();
       $(".bookkit-ext-copy-scenario-panel").remove();
+      $(".bookkit-ext-copy-jira-link").remove();
     }
 
     // update HTML - add icons and links
     let editIcon = 'uu5-bricks-icon mdi mdi-lead-pencil';
 
     let pageTitle = $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header");
+    let pageTitleSpan = pageTitle.find(".uu5-bricks-span").addClass("bookkit-ext-page-title-span");
+
     // if i have rights for edit
     if ($(".uu-bookkit-control-bar-executives").length) {
       pageTitle.append('<span class="bookkit-ext-edit ' + editIcon + '" data-link-cs="Upravit strukturu obsahu" data-link-en="Update Content Structure"></span>');
@@ -133,11 +145,14 @@ GM_addStyle(`
     // add MD link
     pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
 
+    // copy link - JIRA format
+    pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard" data-page-name="' + pageTitleSpan.text() + '">copy JIRA link</span>');
+
     // add copy scenarios
     initCopyScenarios();
 
     // add resizable left navigation
-    initResizableLeftNavigation()
+    initResizableLeftNavigation();
 
     // mark page as ready
     page.addClass("bookkit-ext-page-done");
@@ -149,6 +164,7 @@ GM_addStyle(`
     // if page not loaded yet - do it later
     if (!title.length) {
       setTimeout(firstInit, 3000);
+      return;
     }
 
     // update HTML - add icons and links
@@ -166,7 +182,7 @@ GM_addStyle(`
       if (menuText.includes("uuCMD") || menuText.includes("uuCmd")) {
         $(this).addClass("bookkit-ext-cmd");
       }
-      if (menuText.includes("Store")) {
+      if (menuText.includes("ObjectStore") || menuText.includes("BinaryStore") || menuText.includes("Database")) {
         $(this).addClass("bookkit-ext-store");
       }
     });
@@ -254,6 +270,16 @@ GM_addStyle(`
     // click to page title is linking to knowledge base
     if ($(e.target).parent().hasClass("uu-bookkit-book-top-text")) {
       window.open('https://docs.plus4u.net/book', '_blank');
+    }
+
+    // click to "copy JIRA link"
+    if ($(e.target).hasClass("bookkit-ext-copy-jira-link")) {
+      copyToClipBoard("[" + $(e.target).data("page-name") + "|" + window.location.href + "]");
+    }
+
+    // click to page title -> select it
+    if ($(e.target).hasClass("bookkit-ext-page-title-span")) {
+      window.getSelection().selectAllChildren($(".bookkit-ext-page-title-span").get(0));
     }
   });
 
