@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.7.0
+// @version      0.7.1
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -146,7 +146,7 @@ GM_addStyle(`
     pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
 
     // copy link - JIRA format
-    pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard" data-page-name="' + pageTitleSpan.text() + '">copy JIRA link</span>');
+    pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard" data-page-name="' + pageTitleSpan.text() + '">copy link</span>');
 
     // add copy scenarios
     initCopyScenarios();
