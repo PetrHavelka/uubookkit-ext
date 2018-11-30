@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.7.1
+// @version      0.8.0
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -32,6 +32,43 @@ GM_addStyle(`
 }
 .uu-bookkit-book-top-text {
   cursor: pointer;
+}
+#autocomplete {
+  margin-left: auto;
+  margin-right: auto;
+  min-width: 400px;
+}
+#autocomplete-input {
+  width: 100%;
+}
+#autocomplete-list {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+}
+
+#autocomplete-list div {
+  padding: 5px;
+  cursor: pointer;
+  background-color: #fff; 
+  border-bottom: 1px solid #d4d4d4; 
+  margin-left: auto;
+  margin-right: auto;
+  color: black;
+  min-width: 400px;
+}
+
+#autocomplete-list div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9; 
+}
+
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important; 
+  color: #ffffff; 
 }
 .bookkit-ext-md {
   color: black;
@@ -96,6 +133,8 @@ GM_addStyle(`
   console.log("uuBookKit-ext starting...");
 
   let currentPageData = {};
+  let currentBookStructure = {};
+  let menuIndex = {};
 
   // init of each bookkit page
   let initPage = function () {
@@ -154,6 +193,8 @@ GM_addStyle(`
     // add resizable left navigation
     initResizableLeftNavigation();
 
+    initAutocomplete($("#autocomplete-input"), menuIndex);
+
     // mark page as ready
     page.addClass("bookkit-ext-page-done");
   };
@@ -166,6 +207,9 @@ GM_addStyle(`
       setTimeout(firstInit, 3000);
       return;
     }
+
+    let autocompleteInput = $('<div id="autocomplete"><input type="text" id="autocomplete-input" name="autocomplete" placeholder="Search for page (Alt + n)" autocomplete="off" /></div>');
+    title.after(autocompleteInput);
 
     // update HTML - add icons and links
     let refreshIcon = '<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-refresh"></span>';
@@ -187,9 +231,79 @@ GM_addStyle(`
       }
     });
 
-
     // init bookkit page
     initPage();
+  };
+
+  let searchInit = function () {
+    let lang = $(".uu-bookkit-book-top .uu5-bricks-language-selector-code-text").text();
+    Object.keys(currentBookStructure.itemMap).forEach(function(key) {
+      let labels = currentBookStructure.itemMap[key].label;
+      let label = labels[lang];
+      if (!label) {
+        label = labels[Object.keys(labels)[0]];
+      }
+      menuIndex[key] = label;
+    });
+    console.log(menuIndex);
+  };
+
+  // Source: https://www.w3schools.com/howto/howto_js_autocomplete.asp
+  let initAutocomplete = function(input, options) {
+    let current = -1;
+
+    input.on("input", function(e) {
+      $("#autocomplete-list").remove();
+      if (!this.value) return false;
+
+      let listItems = $('<div id="autocomplete-list"></div>');
+      input.after(listItems);
+
+      let count = 0;
+      let keys = Object.keys(options);
+      for (let i = 0; i < keys.length && count < 20; i++) {
+        let pageCode = keys[i];
+        let pageName = options[pageCode];
+        if (pageName.toLowerCase().includes(this.value.toLowerCase())) {
+          let item = $('<div>' + pageName + '</div>');
+          item.click(function() {
+            $("#autocomplete-input").val("");
+            gotoPage(pageCode);
+          });
+          listItems.append(item);
+          count++;
+        }
+      }
+
+    });
+    input.keydown(function(e) {
+      // console.log(e.key);
+      if (e.key == "ArrowDown") {
+        current++
+        markActive();
+      }
+      if (e.key == "ArrowUp") {
+        current--;
+        markActive();
+      }
+      if (e.key == "Enter") {
+        e.preventDefault();
+        if (current > -1) $("#autocomplete-list .autocomplete-active").click();
+      }
+    });
+
+    function markActive() {
+      let items = $("#autocomplete-list div");
+      if (current >= items.length) current = 0;
+      if (current < 0) current = (items.length - 1);
+      items.removeClass("autocomplete-active");
+      $("#autocomplete-list div:nth-child("+ (current + 1) +")").addClass("autocomplete-active");
+    }
+
+    /*execute a function when someone clicks in the document:*/
+    document.addEventListener("click", function (e) {
+      $("#autocomplete-list").remove();
+    });
   };
 
   // inject to CMD call
@@ -201,6 +315,13 @@ GM_addStyle(`
         this.addEventListener('load', function () {
           currentPageData = JSON.parse(this.responseText);
           initPage();
+        });
+      }
+      if (url.includes("getBookStructure")) {
+        this.addEventListener('load', function () {
+          currentBookStructure = JSON.parse(this.responseText);
+          console.log(currentBookStructure);
+          searchInit();
         });
       }
       origOpen.apply(this, arguments);
@@ -245,6 +366,22 @@ GM_addStyle(`
     });
   };
 
+  let gotoPage = function(pageCode) {
+    console.log("Goto code ", pageCode);
+    let links = $(".uu-bookkit-book-left .plus4u5-app-go-to-page-link");
+    for (let i = 0; i < links.length; i++) {
+      // console.log(links[i].href);
+      if (links[i].href.includes("/book/page?code=" + pageCode)) {
+        links[i].click();
+        break;
+      }
+    }
+
+    // let x = ;
+    // console.log(x.get(0));
+    // x.get(0).click();
+  };
+
   // handle all clicks on webpage
   $(document).click(function (e) {
     // console.log($(e.target));
@@ -285,8 +422,12 @@ GM_addStyle(`
 
   $(document).keyup(function (e) {
     // close edit dialog on ESC
-    if (e.keyCode === 27) {
+    if (e.key === "Escape") {
       click($(".uu5-bricks-modal-l .uu5-bricks-modal-header-close"));
+    }
+
+    if (e.key === "n" && e.altKey === true) {
+      $("#autocomplete-input").select();
     }
 
     /* not working correctly
@@ -305,112 +446,112 @@ GM_addStyle(`
   var copyContent = "";
 
   var copyToClipBoard = (content) => {
-      let textArea = document.createElement("textarea");
-      textArea.innerHTML = content;
-      document.body.appendChild(textArea);
+    let textArea = document.createElement("textarea");
+    textArea.innerHTML = content;
+    document.body.appendChild(textArea);
 
-      let range,
-      selection;
+    let range,
+        selection;
 
-      if (navigator.userAgent.match(/ipad|iphone/i)) {
-          range = document.createRange();
-          range.selectNodeContents(textArea);
-          selection = window.getSelection();
-          selection.removeAllRanges();
-          selection.addRange(range);
-          textArea.setSelectionRange(0, 999999);
-      } else {
-          textArea.select();
-      }
+    if (navigator.userAgent.match(/ipad|iphone/i)) {
+      range = document.createRange();
+      range.selectNodeContents(textArea);
+      selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      textArea.setSelectionRange(0, 999999);
+    } else {
+      textArea.select();
+    }
 
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
   };
 
   var decodeSpecialChars = (input) => {
-      var txt = document.createElement("textarea");
-      txt.innerHTML = input;
-      return txt.value;
+    var txt = document.createElement("textarea");
+    txt.innerHTML = input;
+    return txt.value;
   };
 
   var walkOverList = (olElement, prefix) => {
-      let stepNumber = 1;
+    let stepNumber = 1;
 
-      // walk over li elements
-      olElement.childNodes.forEach(liElement => {
-          let itemTextContent = liElement.innerHTML.replace(/(\<[ou]l(\s*.*)*\/[ou]l\>)/gm, "").replace(/(\<[^\>]+\>)/gm, "");
-          let stepLine = prefix + stepNumber + " - " + decodeSpecialChars(itemTextContent).replace(/\s+/gm, " ").trim();
+    // walk over li elements
+    olElement.childNodes.forEach(liElement => {
+      let itemTextContent = liElement.innerHTML.replace(/(\<[ou]l(\s*.*)*\/[ou]l\>)/gm, "").replace(/(\<[^\>]+\>)/gm, "");
+      let stepLine = prefix + stepNumber + " - " + decodeSpecialChars(itemTextContent).replace(/\s+/gm, " ").trim();
 
-          // wrap after WORD_WRAP_CHARS chars
-          while (stepLine.length > WORD_WRAP_CHARS) {
-              for (let i = WORD_WRAP_CHARS ; i > 0 ; i--) {
-                  if (stepLine.substr(i, 1).match(/^\s+$/)) {
-                      copyContent += COMMENT_TYPE + stepLine.substr(0, i).replace(/^\s+|\s+$/g, "") + "\n";
-                      stepLine = stepLine.substr(i).replace(/^\s+|\s+$/gm, "");
-                      break;
-                  }
-              }
+      // wrap after WORD_WRAP_CHARS chars
+      while (stepLine.length > WORD_WRAP_CHARS) {
+        for (let i = WORD_WRAP_CHARS ; i > 0 ; i--) {
+          if (stepLine.substr(i, 1).match(/^\s+$/)) {
+            copyContent += COMMENT_TYPE + stepLine.substr(0, i).replace(/^\s+|\s+$/g, "") + "\n";
+            stepLine = stepLine.substr(i).replace(/^\s+|\s+$/gm, "");
+            break;
           }
+        }
+      }
 
-          copyContent += COMMENT_TYPE + stepLine.replace(/^\s+|\s+$/gm, "") + "\n";
+      copyContent += COMMENT_TYPE + stepLine.replace(/^\s+|\s+$/gm, "") + "\n";
 
-          let innerOlElements = liElement.querySelectorAll("ol, ul");
-          if (innerOlElements.length > 0) {
-              innerOlElements.forEach((innerUlOlElement) =>  {
-                  walkOverList(innerUlOlElement, prefix + stepNumber + ".");
-              });
-          }
-          stepNumber++
-      });
-  }
+      let innerOlElements = liElement.querySelectorAll("ol, ul");
+      if (innerOlElements.length > 0) {
+        innerOlElements.forEach((innerUlOlElement) =>  {
+          walkOverList(innerUlOlElement, prefix + stepNumber + ".");
+        });
+      }
+      stepNumber++
+    });
+  };
 
   var initCopyScenarios = () => {
     document.querySelectorAll(".uu5-bricks-section > .uu5-bricks-ol").forEach(olElement => {
-        olElement.insertAdjacentHTML('beforebegin', `<div class="bookkit-ext-copy-scenario-panel uu5-common-div uu-uuapp-designkit-embedded-text-header-bar">
+      olElement.insertAdjacentHTML('beforebegin', `<div class="bookkit-ext-copy-scenario-panel uu5-common-div uu-uuapp-designkit-embedded-text-header-bar">
             <button class="bookkit-ext-copy-scenario-button uu5-bricks-button uu5-bricks-button-m uu5-bricks-button-transparent" type="button">
                 <span class="uu5-bricks-icon mdi mdi-content-copy"></span>
                 <span class="bookkit-ext-copy uu5-bricks-span uu5-bricks-lsi-item">Kopírovat programový komentář</span>
             </button>
         </div>`);
 
-        olElement.previousElementSibling.querySelectorAll(".bookkit-ext-copy-scenario-button")[0].addEventListener("click", () => {
-            copyContent = "";
-            let commentPrefix = "";
-            let heading = olElement.parentElement.querySelectorAll("h1, h2, h3, h4, h5, h6")[0].textContent;
-            if (heading.toLowerCase() === "happy day scenario") {
-                commentPrefix = "HDS ";
-            } else {
-                let prefixToken = heading.split(/\s*\-/)[0];
-                if (prefixToken) {
-                    copyContent = COMMENT_TYPE + heading.replace(/^\s+|\s+$/gm, "") + "\n";
-                    commentPrefix = prefixToken + " ";
-                }
-            }
+      olElement.previousElementSibling.querySelectorAll(".bookkit-ext-copy-scenario-button")[0].addEventListener("click", () => {
+        copyContent = "";
+        let commentPrefix = "";
+        let heading = olElement.parentElement.querySelectorAll("h1, h2, h3, h4, h5, h6")[0].textContent;
+        if (heading.toLowerCase() === "happy day scenario") {
+          commentPrefix = "HDS ";
+        } else {
+          let prefixToken = heading.split(/\s*\-/)[0];
+          if (prefixToken) {
+            copyContent = COMMENT_TYPE + heading.replace(/^\s+|\s+$/gm, "") + "\n";
+            commentPrefix = prefixToken + " ";
+          }
+        }
 
-            walkOverList(olElement, commentPrefix);
-            copyToClipBoard(copyContent);
-        });
+        walkOverList(olElement, commentPrefix);
+        copyToClipBoard(copyContent);
+      });
     });
   };
 
   // Resizable Left Navigation
   const RES_LEFT_NAV_KEY = "BOOKIT_EXT_RES_LEFT_NAV_"+ location.hostname;
   var initResizableLeftNavigation = () => {
-      let leftNavigationElement = $(".plus4u5-app-page-left-wrapper.uu5-bricks-page-left");
-      let leftWidth = localStorage.getItem(RES_LEFT_NAV_KEY);
+    let leftNavigationElement = $(".plus4u5-app-page-left-wrapper.uu5-bricks-page-left");
+    let leftWidth = localStorage.getItem(RES_LEFT_NAV_KEY);
 
-      if(leftWidth) {
-          leftNavigationElement.width(leftWidth);
-      }
+    if(leftWidth) {
+      leftNavigationElement.width(leftWidth);
+    }
 
-      if (!leftNavigationElement.data("initialized")) {
-          leftNavigationElement.data("initialized", true);
-          leftNavigationElement.resizable({
-              option: {"handles": "e"},
-              resize: ( event, ui ) => { localStorage.setItem(RES_LEFT_NAV_KEY, ui.size.width); },
-              containment: 'document'
-          });
-      }
+    if (!leftNavigationElement.data("initialized")) {
+      leftNavigationElement.data("initialized", true);
+      leftNavigationElement.resizable({
+        option: {"handles": "e"},
+        resize: ( event, ui ) => { localStorage.setItem(RES_LEFT_NAV_KEY, ui.size.width); },
+        containment: 'document'
+      });
+    }
   };
 
 })();
