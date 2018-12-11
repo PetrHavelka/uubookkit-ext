@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.8.0
+// @version      0.9.0
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -22,13 +22,17 @@ let mdUrl = 'http://localhost:4323/vendor-app-subapp/0-0/editor';
 
 GM_addStyle(`
 .bookkit-ext-edit,
-.bookkit-ext-refresh {
+.bookkit-ext-refresh,
+.bookkit-ext-page-reload {
   margin-left: 0.5em;
   font-size: 24px;
   cursor: pointer;
 }
 .bookkit-ext-refresh {
   font-size: 22px;
+}
+.bookkit-ext-page-reload {
+  font-size: 24px;
 }
 .uu-bookkit-book-top-text {
   cursor: pointer;
@@ -48,7 +52,6 @@ GM_addStyle(`
   border-top: none;
   z-index: 99;
 }
-
 #autocomplete-list div {
   padding: 5px;
   cursor: pointer;
@@ -65,7 +68,7 @@ GM_addStyle(`
   background-color: #e9e9e9; 
 }
 
-.autocomplete-active {
+#autocomplete-list .autocomplete-active {
   /*when navigating through the items using the arrow keys:*/
   background-color: DodgerBlue !important; 
   color: #ffffff; 
@@ -76,7 +79,8 @@ GM_addStyle(`
   font-size: 19px;
   margin-left: 0.8em;
 }
-.bookkit-ext-copy-jira-link {
+.bookkit-ext-copy-jira-link,
+.bookkit-ext-copy-md-link {
   color: black;
   text-decoration: none;
   font-size: 19px;
@@ -125,6 +129,23 @@ GM_addStyle(`
 .uu5-bricks-section > ol > li:before {
   display:run-in;
 }
+ol.uu5-bricks-ol ul.uu5-bricks-ul {
+  padding-left: 3em;
+}
+.bookkit-ext-copy-links {
+  position: absolute;
+  right: 0.5em;
+  padding-right: 0.5em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  background-color: white;
+  border: solid 1px black;
+}
+.bookkit-ext-copy-links span {
+  margin-left: 0.5em;
+  cursor: pointer;
+  font-weight: 700;
+}
 `);
 
 (function () {
@@ -135,6 +156,8 @@ GM_addStyle(`
   let currentPageData = {};
   let currentBookStructure = {};
   let menuIndex = {};
+  let ctrlKey = false;
+  let copyMenuVisible = false;
 
   // init of each bookkit page
   let initPage = function () {
@@ -149,8 +172,10 @@ GM_addStyle(`
     if (page.hasClass("bookkit-ext-page-done")) {
       $(".bookkit-ext-edit").remove();
       $(".bookkit-ext-md").remove();
-      $(".bookkit-ext-copy-scenario-panel").remove();
+      $(".bookkit-ext-page-reload").remove();
       $(".bookkit-ext-copy-jira-link").remove();
+      $(".bookkit-ext-copy-md-link").remove();
+      $(".bookkit-ext-copy-scenario-panel").remove();
     }
 
     // update HTML - add icons and links
@@ -184,8 +209,13 @@ GM_addStyle(`
     // add MD link
     pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
 
+    // page refresh icon
+    pageTitle.append('<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-page-reload" title="Reload current page" accesskey="r"></span>');
+
     // copy link - JIRA format
-    pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard" data-page-name="' + pageTitleSpan.text() + '">copy link</span>');
+    pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard in JIRA format" data-page-name="' + pageTitleSpan.text() + '">copy link</span>');
+    // copy link - MD format
+    pageTitle.append('<span class="bookkit-ext-copy-md-link" title="Copy link to current page into clipboard in MD format" data-page-name="' + pageTitleSpan.text() + '">copy MD link</span>');
 
     // add copy scenarios
     initCopyScenarios();
@@ -208,7 +238,7 @@ GM_addStyle(`
       return;
     }
 
-    let autocompleteInput = $('<div id="autocomplete"><input type="text" id="autocomplete-input" name="autocomplete" placeholder="Search for page (Alt + n)" autocomplete="off" /></div>');
+    let autocompleteInput = $('<div id="autocomplete"><input type="text" id="autocomplete-input" name="autocomplete" placeholder="Search for page (Alt + n)" autocomplete="off" accesskey="n" /></div>');
     title.after(autocompleteInput);
 
     // update HTML - add icons and links
@@ -253,6 +283,7 @@ GM_addStyle(`
     let current = -1;
 
     input.on("input", function(e) {
+      current = -1;
       $("#autocomplete-list").remove();
       if (!this.value) return false;
 
@@ -266,6 +297,10 @@ GM_addStyle(`
         let pageName = options[pageCode];
         if (pageName.toLowerCase().includes(this.value.toLowerCase())) {
           let item = $('<div>' + pageName + '</div>');
+          if (count === 0) {
+            item = item.addClass("autocomplete-active");
+            current = 0;
+          }
           item.click(function() {
             $("#autocomplete-input").val("");
             gotoPage(pageCode);
@@ -278,17 +313,22 @@ GM_addStyle(`
     });
     input.keydown(function(e) {
       // console.log(e.key);
-      if (e.key == "ArrowDown") {
-        current++
+      if (e.key === "ArrowDown") {
+        current++;
         markActive();
       }
-      if (e.key == "ArrowUp") {
+      if (e.key === "ArrowUp") {
         current--;
         markActive();
       }
-      if (e.key == "Enter") {
+      if (e.key === "Enter") {
         e.preventDefault();
-        if (current > -1) $("#autocomplete-list .autocomplete-active").click();
+        if (current > -1) {
+          $("#autocomplete-list div.autocomplete-active").click();
+        } else {
+          $("#autocomplete-list div").first().click();
+        }
+
       }
     });
 
@@ -366,20 +406,70 @@ GM_addStyle(`
     });
   };
 
+  let getPageCode = function (url) {
+    return url.substring(url.lastIndexOf("?code=") + 6);
+  };
+
+  let getCurrentPageCode = function() {
+    let pageUrl = window.location.href;
+    return getPageCode(pageUrl);
+  };
+
+  let reloadCurrentPage = function() {
+    UU5.Environment.ccr.byKey["UuBookKit.Page"].reload()
+  };
+
   let gotoPage = function(pageCode) {
     console.log("Goto code ", pageCode);
-    let links = $(".uu-bookkit-book-left .plus4u5-app-go-to-page-link");
-    for (let i = 0; i < links.length; i++) {
-      // console.log(links[i].href);
-      if (links[i].href.includes("/book/page?code=" + pageCode)) {
-        links[i].click();
-        break;
-      }
+    if (ctrlKey) {
+      let url = $(".plus4u5-app-go-to-page-link").first().attr("href") + "/page?code=" + pageCode;
+      window.open(url, '_blank');
     }
+    else {
+      UU5.Environment.ccr.byKey["UuBookKit.BookReady"].goToPage(pageCode);
+    }
+  };
 
-    // let x = ;
-    // console.log(x.get(0));
-    // x.get(0).click();
+  let getJiraLink = function(text, url) {
+    return "[" + text + "|" + url + "]";
+  };
+
+  let getMdLink = function(text, url) {
+    return "[" + text + "](book:" + getPageCode(url) + ")";
+  };
+
+  let handleClickToCopyOptions = function(e) {
+    let link = $(this).parent().find(".plus4u5-app-go-to-page-link");
+    let url = document.location.origin + link.attr("href");
+    let text = link.text();
+
+    if ($(e.target).hasClass("cn")) {
+      copyToClipBoard(text);
+    }
+    if ($(e.target).hasClass("cjl")) {
+      copyToClipBoard(getJiraLink(text, url));
+    }
+    if ($(e.target).hasClass("cmdl")) {
+      copyToClipBoard(getMdLink(text, url));
+    }
+  };
+
+  let showCopyOptionsInMenu = function () {
+    copyMenuVisible = true;
+    $(".plus4u5-app-menu-link").each(function () {
+      let links = $('<div class="bookkit-ext-copy-links">'
+            + '<span class="cn" title="Copy page name into clipboard">CN</span>'
+            + '<span class="cjl" title="Copy link to current page into clipboard in JIRA format">CJL</span>'
+            + '<span class="cmdl" title="Copy link to current page into clipboard in MD format">CMDL</span>'
+          + '</div>');
+      links.click(handleClickToCopyOptions);
+      $(this).append(links);
+    });
+  };
+
+  let hideCopyOptionsInMenu = function () {
+    copyMenuVisible = false;
+    $(".plus4u5-app-menu-link .bookkit-ext-copy-links").remove();
   };
 
   // handle all clicks on webpage
@@ -406,28 +496,49 @@ GM_addStyle(`
 
     // click to page title is linking to knowledge base
     if ($(e.target).parent().hasClass("uu-bookkit-book-top-text")) {
-      window.open('https://docs.plus4u.net/book', '_blank');
+      window.open('https://docs.plus4u.net/book/page?code=books', '_blank');
     }
 
     // click to "copy JIRA link"
     if ($(e.target).hasClass("bookkit-ext-copy-jira-link")) {
-      copyToClipBoard("[" + $(e.target).data("page-name") + "|" + window.location.href + "]");
+      copyToClipBoard(getJiraLink($(e.target).data("page-name"), window.location.href));
+    }
+
+    if ($(e.target).hasClass("bookkit-ext-copy-md-link")) {
+      copyToClipBoard(getMdLink($(e.target).data("page-name"), window.location.href));
     }
 
     // click to page title -> select it
     if ($(e.target).hasClass("bookkit-ext-page-title-span")) {
       window.getSelection().selectAllChildren($(".bookkit-ext-page-title-span").get(0));
     }
+
+    // click to reload page
+    if ($(e.target).hasClass("bookkit-ext-page-reload")) {
+      reloadCurrentPage();
+    }
   });
 
-  $(document).keyup(function (e) {
+  $(document).keydown(function (e) {
+    // console.log(e.key);
+
     // close edit dialog on ESC
     if (e.key === "Escape") {
       click($(".uu5-bricks-modal-l .uu5-bricks-modal-header-close"));
     }
 
-    if (e.key === "n" && e.altKey === true) {
-      $("#autocomplete-input").select();
+    if (e.key === "F4") {
+      reloadCurrentPage();
+    }
+
+    // if (e.key === "n" && e.altKey === true) {
+    //   window.scrollTo(0, 0);
+    //   $("#autocomplete-input").select();
+    // }
+
+    if (e.key === "Control") {
+      ctrlKey = true;
+      if (!copyMenuVisible) showCopyOptionsInMenu();
     }
 
     /* not working correctly
@@ -436,6 +547,15 @@ GM_addStyle(`
       click($(".uu5-bricks-modal-l .color-schema-primary.uu5-bricks-button"));
     }
     */
+  });
+
+  $(document).keyup(function (e) {
+    // console.log(e.key);
+
+    if (e.key === "Control") {
+      ctrlKey = false;
+      if (copyMenuVisible) hideCopyOptionsInMenu();
+    }
   });
 
   // Copy scenarios
