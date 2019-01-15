@@ -211,7 +211,9 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       return;
     }
 
-    let autocompleteInput = $('<div id="autocomplete"><input type="text" id="autocomplete-input" name="autocomplete" placeholder="Search for page (Alt + n)" autocomplete="off" accesskey="n" /></div>');
+    let autocompleteInput = $('<div id="autocomplete"><input type="text" id="autocomplete-input" name="autocomplete" autocomplete="off" accesskey="n" /></div>');
+    const acIn = autocompleteInput.children()[0];
+    acIn.placeholder = `Search for page (${acIn.accessKeyLabel || 'Alt + ' + acIn.accessKey})`;
     title.after(autocompleteInput);
 
     // update HTML - add icons and links
