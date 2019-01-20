@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.9.0
-// @description  Add usefull links to page
-// @author       Petr Havelka, Josef Jetmar
+// @version      0.9.1
+// @description  Multiple Bookkit usability improvements
+// @author       Petr Havelka
+// @author       Josef Jetmar
+// @author       Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @match        https://docs.plus4u.net/book*
@@ -223,6 +225,9 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     // add resizable left navigation
     initResizableLeftNavigation();
 
+    // add title attributes to the navigation tree items
+    addNavigationTitles();
+
     initAutocomplete($("#autocomplete-input"), menuIndex);
 
     // mark page as ready
@@ -395,7 +400,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       if (item.text() == "Obsah stránky" || item.text() == "Page body") item.click();
     });
 
-    // find all linsk in controll menu
+    // find all links in control menu
     $('a.uu5-bricks-dropdown-item-link').each(function () {
       let item = $(this);
       // compare its text
@@ -673,5 +678,13 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       });
     }
   };
+
+  /**
+   * Adds link texts of the left navigation panel items to their title attributes so it is shown on mouse over.
+   */
+  const addNavigationTitles = () => {
+    const navLinks = document.querySelectorAll('a.plus4u5-app-go-to-page-link');
+    navLinks.forEach(a => a.title = a.innerText);
+  }
 
 })();

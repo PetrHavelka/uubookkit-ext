@@ -1,14 +1,14 @@
 # uuBookKit-ext
 It will add useful links into page.
-- page title is link to Knowledge Base
-- pencil icon for edit document structure is added (if used has permissions)
+- Page title is a link to Knowledge Base
+- Pencil icon for editing a document structure is added (if user has permissions)
 - MD link for edit document in [uuDockitHelper](https://github.com/jiridudekusy/uuDockitHelper) is added (if used has permissions)
-- pencil icon for edit each section is added (if user has permission)
+- Pencil icon for editing each section is added (if user has the permission)
 - ESC key will close edit window
 - Menu
-  - Long names in menu do not wrap
+  - Long names in menu do not wrap (full name is displayed by moving cursor over a menu item)
   - Enable to drag'n'drop resize left navigation.
-  - Specified menu items are colored (Business, uuSubApp, *Stores, uuCMD)
+  - Specific menu items are colored (Business, uuSubApp, *Stores, uuCMD)
 - Scenarios
   - Add option to copy HDS and alternative scenarios with ordering numbers as a program comments into clipboard.
 
