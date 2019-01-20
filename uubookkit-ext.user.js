@@ -159,6 +159,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   let currentBookStructure = {};
   let menuIndex = {};
   let ctrlKey = false;
+  let ctrlKeyTimeout = null;
   let copyMenuVisible = false;
 
   // init of each bookkit page
@@ -543,6 +544,8 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
     if (e.key === "Control") {
       ctrlKey = true;
+      if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
+      ctrlKeyTimeout = setTimeout(() => $(document).trigger({type: 'keyup', key: 'Control'}), 1000);
       if (!copyMenuVisible) showCopyOptionsInMenu();
     }
 
@@ -559,6 +562,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
     if (e.key === "Control") {
       ctrlKey = false;
+      if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
       if (copyMenuVisible) hideCopyOptionsInMenu();
     }
   });
