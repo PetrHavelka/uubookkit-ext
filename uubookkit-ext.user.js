@@ -1,11 +1,9 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.9.1
+// @version      0.9.2
 // @description  Multiple Bookkit usability improvements
-// @author       Petr Havelka
-// @author       Josef Jetmar
-// @author       Ales Holy
+// @author       Petr Havelka, Josef Jetmar, Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @match        https://docs.plus4u.net/book*
@@ -136,7 +134,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 }
 .bookkit-ext-copy-links {
   position: absolute;
-  right: 0.5em;
+  right: 1em;
   padding-right: 0.5em;
   padding-top: 0.2em;
   padding-bottom: 0.2em;
@@ -267,6 +265,11 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       }
     });
 
+    // add resizable left navigation
+    initResizableLeftNavigation();
+
+    initAutocomplete($("#autocomplete-input"), menuIndex);
+
     // init bookkit page
     initPage();
   };
@@ -287,6 +290,10 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   // Source: https://www.w3schools.com/howto/howto_js_autocomplete.asp
   let initAutocomplete = function(input, options) {
     let current = -1;
+
+    input.on("focus", function(e) {
+      window.scrollTo(0, 0);
+    });
 
     input.on("input", function(e) {
       current = -1;
@@ -666,16 +673,20 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   // Resizable Left Navigation
   const RES_LEFT_NAV_KEY = "BOOKIT_EXT_RES_LEFT_NAV_"+ location.hostname;
   var initResizableLeftNavigation = () => {
-    let leftNavigationElement = $(".plus4u5-app-page-left-wrapper.uu5-bricks-page-left");
     let leftWidth = localStorage.getItem(RES_LEFT_NAV_KEY);
 
+    let leftNavigationElementFixed = $(".plus4u5-app-page-left-wrapper.uu5-bricks-page-left.uu5-bricks-page-column-fixed");
+    let leftNavigationElementGhost = $(".plus4u5-app-page-left-wrapper.uu5-bricks-page-left.uu5-bricks-page-column-ghost");
+
     if(leftWidth) {
-      leftNavigationElement.width(leftWidth);
+      leftNavigationElementFixed.width(leftWidth);
+      leftNavigationElementGhost.width(leftWidth);
+      leftNavigationElementGhost.css("max-width", leftWidth + "px");
     }
 
-    if (!leftNavigationElement.data("initialized")) {
-      leftNavigationElement.data("initialized", true);
-      leftNavigationElement.resizable({
+    if (!leftNavigationElementFixed.data("initialized")) {
+      leftNavigationElementFixed.data("initialized", true);
+      leftNavigationElementFixed.resizable({
         option: {"handles": "e"},
         resize: ( event, ui ) => { localStorage.setItem(RES_LEFT_NAV_KEY, ui.size.width); },
         containment: 'document'
