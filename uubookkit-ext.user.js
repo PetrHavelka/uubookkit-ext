@@ -297,10 +297,24 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
       let count = 0;
       let keys = Object.keys(options);
-      for (let i = 0; i < keys.length && count < 20; i++) {
-        let pageCode = keys[i];
-        let pageName = options[pageCode];
-        if (pageName.toLowerCase().includes(this.value.toLowerCase())) {
+      const similiarWords = this.value.split(/\s+/).map(v => v.split("").join(".?"));
+      const matchRegExp = new RegExp("(" + similiarWords.join("|") + ")", "gmi");
+
+      // Set priorities
+      const itemsByPriorities = keys.sort(
+          (i1, i2) => {
+              const matches1 = options[i1].match(matchRegExp) || [];
+              const matches2 = options[i2].match(matchRegExp) || [];
+
+              const weightPriority1 = [...new Set(matches1)];
+              const weightPriority2 = [...new Set(matches2)];
+
+              return (matches2.length + 10 * weightPriority2.length) - (matches1.length + 10 * weightPriority1.length);
+          }
+      );
+
+      for (const pageCode of itemsByPriorities.slice(0, 15)) {
+          let pageName = options[pageCode];
           let item = $('<div>' + pageName + '</div>');
           if (count === 0) {
             item = item.addClass("autocomplete-active");
@@ -312,7 +326,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
           });
           listItems.append(item);
           count++;
-        }
       }
 
     });
