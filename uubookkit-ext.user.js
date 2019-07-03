@@ -274,7 +274,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
       let count = 0;
       let keys = Object.keys(options);
-      const similiarWords = this.value.split(/\s+/).map(v => v.split("").join(".?"));
+      const similiarWords = this.value.trim(/\s+/).split(/\s+/).map(v => v.split("").join(".?"));
       const matchRegExp = new RegExp("(" + similiarWords.join("|") + ")", "gmi");
 
       // Set priorities
