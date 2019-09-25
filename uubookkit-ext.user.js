@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.9.2
+// @version      0.9.3
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -242,8 +242,8 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     title.after(refreshIcon);
 
     $(".plus4u5-app-menu-link").each(function(item) {
-      let menuText = $(this).text();
-      if (menuText.includes("uuSubApp")) {
+      let menuText = $(this).text().replace(/\u200B/g, "");
+      if (menuText.includes("uuSubApp") || menuText.includes("uuProduct") || menuText.includes("uuScript") || menuText.includes("uuLib")) {
         $(this).addClass("bookkit-ext-uusubapp");
       }
       if (menuText.includes("Business Mod")) {
