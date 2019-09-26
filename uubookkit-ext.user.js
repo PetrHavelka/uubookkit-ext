@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.9.3
+// @version      0.9.4
 // @description  Add usefull links to page
 // @author       Petr Havelka, Josef Jetmar
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -171,7 +171,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
     // page is already done - remove all links
     if (page.hasClass("bookkit-ext-page-done")) {
-      $(".bookkit-ext-edit").remove();
       $(".bookkit-ext-md").remove();
       $(".bookkit-ext-page-reload").remove();
       $(".bookkit-ext-copy-jira-link").remove();
@@ -184,28 +183,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
     let pageTitle = $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header");
     let pageTitleSpan = pageTitle.find(".uu5-bricks-span").addClass("bookkit-ext-page-title-span");
-
-    // if i have rights for edit
-    if ($(".uu-bookkit-control-bar-executives").length) {
-      pageTitle.append('<span class="bookkit-ext-edit ' + editIcon + '" data-link-cs="Upravit strukturu obsahu" data-link-en="Update Content Structure"></span>');
-
-      $(".uu-bookkit-page h2.uu5-bricks-header, .uu-bookkit-page h3.uu5-bricks-header").each(function (i) {
-        // find correct index
-        let title = $(this).text();
-        if (currentPageData && currentPageData.body) {
-          for (let a = 0; a < currentPageData.body.length; a++) {
-            if (currentPageData.body[a].content.includes('header="' + title + '"')) {
-              i = a;
-              break;
-            }
-          }
-        }
-        $(this).append('<span class="bookkit-ext-edit ' + editIcon
-            + '" data-link-cs="Upravit obsah - sekce ' + i
-            + '" data-link-en="Update Content - Section ' + i
-            + '" title="Upravit obsah - sekce ' + i + '"></span>');
-      });
-    }
 
     // add MD link
     pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
@@ -485,17 +462,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     if ($(e.target).hasClass("bookkit-ext-refresh")) {
       // init page
       initPage();
-      return;
-    }
-
-    // is it click to edit button?
-    if ($(e.target).hasClass("bookkit-ext-edit")) {
-      // detect language
-      var lang = $(".uu-bookkit-book-top .uu5-bricks-language-selector-code-text").text();
-      // console.log(lang);
-
-      // click to particular link in control menu
-      clickLinkByName($(e.target).data("link-" + lang));
       return;
     }
 
