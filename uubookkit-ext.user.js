@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.9.2
+// @version      0.9.4
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -171,7 +171,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
     // page is already done - remove all links
     if (page.hasClass("bookkit-ext-page-done")) {
-      $(".bookkit-ext-edit").remove();
       $(".bookkit-ext-md").remove();
       $(".bookkit-ext-page-reload").remove();
       $(".bookkit-ext-copy-jira-link").remove();
@@ -184,28 +183,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
     let pageTitle = $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header");
     let pageTitleSpan = pageTitle.find(".uu5-bricks-span").addClass("bookkit-ext-page-title-span");
-
-    // if i have rights for edit
-    if ($(".uu-bookkit-control-bar-executives").length) {
-      pageTitle.append('<span class="bookkit-ext-edit ' + editIcon + '" data-link-cs="Upravit strukturu obsahu" data-link-en="Update Content Structure"></span>');
-
-      $(".uu-bookkit-page h2.uu5-bricks-header, .uu-bookkit-page h3.uu5-bricks-header").each(function (i) {
-        // find correct index
-        let title = $(this).text();
-        if (currentPageData && currentPageData.body) {
-          for (let a = 0; a < currentPageData.body.length; a++) {
-            if (currentPageData.body[a].content.includes('header="' + title + '"')) {
-              i = a;
-              break;
-            }
-          }
-        }
-        $(this).append('<span class="bookkit-ext-edit ' + editIcon
-            + '" data-link-cs="Upravit obsah - sekce ' + i
-            + '" data-link-en="Update Content - Section ' + i
-            + '" title="Upravit obsah - sekce ' + i + '"></span>');
-      });
-    }
 
     // add MD link
     pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
@@ -242,7 +219,9 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       return;
     }
 
-    let autocompleteInput = $('<div id="autocomplete"><input type="text" id="autocomplete-input" name="autocomplete" placeholder="Search for page (Alt + n)" autocomplete="off" accesskey="n" /></div>');
+    let autocompleteInput = $('<div id="autocomplete"><input type="text" id="autocomplete-input" name="autocomplete" autocomplete="off" accesskey="n" /></div>');
+    const acIn = autocompleteInput.children()[0];
+    acIn.placeholder = `Search for page (${acIn.accessKeyLabel || 'Alt + ' + acIn.accessKey})`;
     title.after(autocompleteInput);
 
     // update HTML - add icons and links
@@ -250,8 +229,8 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     title.after(refreshIcon);
 
     $(".plus4u5-app-menu-link").each(function(item) {
-      let menuText = $(this).text();
-      if (menuText.includes("uuSubApp")) {
+      let menuText = $(this).text().replace(/\u200B/g, "");
+      if (menuText.includes("uuSubApp") || menuText.includes("uuProduct") || menuText.includes("uuScript") || menuText.includes("uuLib")) {
         $(this).addClass("bookkit-ext-uusubapp");
       }
       if (menuText.includes("Business Mod")) {
@@ -305,10 +284,24 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
       let count = 0;
       let keys = Object.keys(options);
-      for (let i = 0; i < keys.length && count < 20; i++) {
-        let pageCode = keys[i];
-        let pageName = options[pageCode];
-        if (pageName.toLowerCase().includes(this.value.toLowerCase())) {
+      const similiarWords = this.value.trim(/\s+/).split(/\s+/).map(v => v.split("").join(".?"));
+      const matchRegExp = new RegExp("(" + similiarWords.join("|") + ")", "gmi");
+
+      // Set priorities
+      const itemsByPriorities = keys.sort(
+          (i1, i2) => {
+              const matches1 = options[i1].match(matchRegExp) || [];
+              const matches2 = options[i2].match(matchRegExp) || [];
+
+              const weightPriority1 = [...new Set(matches1)];
+              const weightPriority2 = [...new Set(matches2)];
+
+              return (matches2.length + 10 * weightPriority2.length) - (matches1.length + 10 * weightPriority1.length);
+          }
+      );
+
+      for (const pageCode of itemsByPriorities.slice(0, 15)) {
+          let pageName = options[pageCode];
           let item = $('<div>' + pageName + '</div>');
           if (count === 0) {
             item = item.addClass("autocomplete-active");
@@ -320,7 +313,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
           });
           listItems.append(item);
           count++;
-        }
       }
 
     });
@@ -493,17 +485,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     if ($(e.target).hasClass("bookkit-ext-refresh")) {
       // init page
       initPage();
-      return;
-    }
-
-    // is it click to edit button?
-    if ($(e.target).hasClass("bookkit-ext-edit")) {
-      // detect language
-      var lang = $(".uu-bookkit-book-top .uu5-bricks-language-selector-code-text").text();
-      // console.log(lang);
-
-      // click to particular link in control menu
-      clickLinkByName($(e.target).data("link-" + lang));
       return;
     }
 
@@ -703,3 +684,4 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   }
 
 })();
+
