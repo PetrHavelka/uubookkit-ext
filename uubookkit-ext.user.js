@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.9.4
+// @version      0.10.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -124,7 +124,8 @@ GM_addStyle(`
 .uu5-bricks-section ol.uu5-bricks-ol > li:before {
   content: counters(item, ".") ".";
   counter-increment: item;
-  padding-right:.75em
+  padding-right: .75em;
+  float: left;
 }
 .uu5-bricks-section > ol > li:before {
   display:run-in;
@@ -145,8 +146,38 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   margin-left: 0.5em;
   cursor: pointer;
   font-weight: 700;
+  color: black;
 }
+.bookkit-ext-page-state {
+  position: absolute;
+  right: 1.5em;
+  color: white;
+}
+.bookkit-ext-page-state.uu-bookkit-badge {
+  min-height: 18px;
+  min-width: 18px;
+  font-size: 9px;
+}
+.bookkit-ext-page-state-test {
+  background-color: rgb(0, 93, 167);
+}
+.bookkit-ext-page-state-underConstruction {
+  background-color: rgb(245, 166, 35);
+  color: black;
+}
+.bookkit-ext-page-state-closed {
+  background-color: rgb(26, 35, 126);
+}
+.uu5-bricks-section a[href ^= "http"].uu5-bricks-link:after {
+  content: " " url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=);
+}
+.uu5-bricks-section .uu5-bricks-link.bookkit-ext-invalid-link {
+  color: red;
+}
+
 `);
+
+
 
 (function () {
   'use strict';
@@ -198,6 +229,12 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     // add copy scenarios
     initCopyScenarios();
 
+    // add colours into menu
+    colorizeMenu();
+
+    // mark invalid link by rec color
+    colorizeInvalidLinks();
+
     // add resizable left navigation
     initResizableLeftNavigation();
 
@@ -228,6 +265,14 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     let refreshIcon = '<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-refresh"></span>';
     title.after(refreshIcon);
 
+    // add state of page into menu
+    addStateIntoMenu();
+
+    // init bookkit page
+    initPage();
+  };
+
+  let colorizeMenu = function() {
     $(".plus4u5-app-menu-link").each(function(item) {
       let menuText = $(this).text().replace(/\u200B/g, "");
       if (menuText.includes("uuSubApp") || menuText.includes("uuProduct") || menuText.includes("uuScript") || menuText.includes("uuLib")) {
@@ -243,27 +288,54 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
         $(this).addClass("bookkit-ext-store");
       }
     });
+  };
 
-    // add resizable left navigation
-    initResizableLeftNavigation();
+  let addStateIntoMenu = function() {
+    let mapState = {
+      test: "T",
+      underConstruction: "W",
+      closed: "C"
+    };
+    $(".plus4u5-app-menu-link").each(function () {
+      let link = $(this).find(".plus4u5-app-go-to-page-link");
+      let pageCode = getPageCode(link.attr("href"));
+      let state = (menuIndex[pageCode]) ? menuIndex[pageCode].state : "?";
+      let stateChar = mapState[state];
+      if (stateChar) {
+        $(this).append($(`<div class="bookkit-ext-page-state uu-bookkit-badge bookkit-ext-page-state-${state}">${stateChar}</div>`));
+      }
+    });
+  };
 
-    initAutocomplete($("#autocomplete-input"), menuIndex);
-
-    // init bookkit page
-    initPage();
+  let colorizeInvalidLinks = function() {
+    let linkUrlPrefix = $(".plus4u5-app-go-to-page-link").first().attr("href") + "/page?code=";
+    $(".uu5-bricks-section .uu5-bricks-link").each(function(item) {
+      let linkUrl = $(this).attr("href");
+      let offset = linkUrl.indexOf(linkUrlPrefix);
+      if (offset > -1) {
+        let pageCode = getPageCode(linkUrl);
+        if (menuIndex[pageCode] === undefined) {
+          $(this).addClass("bookkit-ext-invalid-link").attr("title", `Page with code ${pageCode} do not exists.`);
+        }
+      }
+    });
   };
 
   let searchInit = function () {
     let lang = $(".uu-bookkit-book-top .uu5-bricks-language-selector-code-text").text();
     Object.keys(currentBookStructure.itemMap).forEach(function(key) {
+      let state = currentBookStructure.itemMap[key].state;
       let labels = currentBookStructure.itemMap[key].label;
       let label = labels[lang];
       if (!label) {
         label = labels[Object.keys(labels)[0]];
       }
-      menuIndex[key] = label;
+      menuIndex[key] = {
+        name: label,
+        state: state
+      };
     });
-    console.log(menuIndex);
+    // console.log(menuIndex);
   };
 
   // Source: https://www.w3schools.com/howto/howto_js_autocomplete.asp
@@ -290,8 +362,8 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       // Set priorities
       const itemsByPriorities = keys.sort(
           (i1, i2) => {
-              const matches1 = options[i1].match(matchRegExp) || [];
-              const matches2 = options[i2].match(matchRegExp) || [];
+              const matches1 = options[i1].name.match(matchRegExp) || [];
+              const matches2 = options[i2].name.match(matchRegExp) || [];
 
               const weightPriority1 = [...new Set(matches1)];
               const weightPriority2 = [...new Set(matches2)];
@@ -301,7 +373,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       );
 
       for (const pageCode of itemsByPriorities.slice(0, 15)) {
-          let pageName = options[pageCode];
+          let pageName = options[pageCode].name;
           let item = $('<div>' + pageName + '</div>');
           if (count === 0) {
             item = item.addClass("autocomplete-active");
@@ -443,11 +515,18 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     return "[" + text + "](book:" + getPageCode(url) + ")";
   };
 
+  let getGTP = function(text, url) {
+    return "<uu5string/><UuBookKit.Bricks.GoToPageLink page=\"" + getPageCode(url) + "\">" + text + "</UuBookKit.Bricks.GoToPageLink>";
+  };
+
   let handleClickToCopyOptions = function(e) {
     let link = $(this).parent().find(".plus4u5-app-go-to-page-link");
     let url = document.location.origin + link.attr("href");
     let text = link.text();
 
+    if ($(e.target).hasClass("cc")) {
+      copyToClipBoard(getPageCode(url));
+    }
     if ($(e.target).hasClass("cn")) {
       copyToClipBoard(text);
     }
@@ -457,15 +536,20 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     if ($(e.target).hasClass("cmdl")) {
       copyToClipBoard(getMdLink(text, url));
     }
+    if ($(e.target).hasClass("cgtp")) {
+      copyToClipBoard(getGTP(text, url));
+    }
   };
 
   let showCopyOptionsInMenu = function () {
     copyMenuVisible = true;
     $(".plus4u5-app-menu-link").each(function () {
       let links = $('<div class="bookkit-ext-copy-links">'
+            + '<span class="cc" title="Copy page code into clipboard">CC</span>'
             + '<span class="cn" title="Copy page name into clipboard">CN</span>'
             + '<span class="cjl" title="Copy link to current page into clipboard in JIRA format">CJL</span>'
             + '<span class="cmdl" title="Copy link to current page into clipboard in MD format">CMDL</span>'
+            + '<span class="cgtp" title="Copy link to current page into clipboard in GoToLink UU5 tag format">CGTP</span>'
           + '</div>');
       links.click(handleClickToCopyOptions);
       $(this).append(links);
@@ -504,8 +588,14 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
     // click to page title -> select it
     if ($(e.target).hasClass("bookkit-ext-page-title-span")) {
-      window.getSelection().selectAllChildren($(".bookkit-ext-page-title-span").get(0));
+      window.getSelection().selectAllChildren($(e.target).get(0));
     }
+
+    // click to section title -> select it
+    if ($(e.target).hasClass("uu5-bricks-header")) {
+      window.getSelection().selectAllChildren($(e.target).get(0));
+    }
+
 
     // click to reload page
     if ($(e.target).hasClass("bookkit-ext-page-reload")) {
