@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.10.0
+// @version      0.10.1
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -168,7 +168,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 .bookkit-ext-page-state-closed {
   background-color: rgb(26, 35, 126);
 }
-.uu5-bricks-section a[href ^= "http"].uu5-bricks-link:after {
+.uu5-bricks-section a[href ^= "http"].uu5-bricks-link:not(.uu-bookkit-go-to-page-link):after {
   content: " " url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=);
 }
 .uu5-bricks-section .uu5-bricks-link.bookkit-ext-invalid-link {
@@ -484,7 +484,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   };
 
   let getPageCode = function (url) {
-    return url.substring(url.lastIndexOf("?code=") + 6);
+    return url.substring(url.lastIndexOf("?code=") + 6).replace(/#.*/, "");
   };
 
   let getCurrentPageCode = function() {
