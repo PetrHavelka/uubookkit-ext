@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.10.1
+// @version      0.11.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -60,7 +60,13 @@ GM_addStyle(`
   margin-left: auto;
   margin-right: auto;
   color: black;
+  font-size: 0.85em;
   min-width: 400px;
+}
+#autocomplete-list div span {
+  display: block;
+  font-size: 0.75em;
+  color: gray;
 }
 
 #autocomplete-list div:hover {
@@ -72,6 +78,9 @@ GM_addStyle(`
   /*when navigating through the items using the arrow keys:*/
   background-color: DodgerBlue !important; 
   color: #ffffff; 
+}
+#autocomplete-list .autocomplete-active span {
+  color: #cccccc;
 }
 .bookkit-ext-md {
   color: black;
@@ -184,6 +193,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
   console.log("uuBookKit-ext starting...");
 
+  let currentBook = {};
   let currentPageData = {};
   let currentBookStructure = {};
   let menuIndex = {};
@@ -322,8 +332,39 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   };
 
   let searchInit = function () {
+    // not ready yet
+    if (!currentBookStructure.itemMap || !currentBook.home) return;
+
     let lang = $(".uu-bookkit-book-top .uu5-bricks-language-selector-code-text").text();
-    Object.keys(currentBookStructure.itemMap).forEach(function(key) {
+    let path = [];
+    let lastLabel = null;
+
+    // go through all pages from menu
+    let key = currentBook.home;
+    do {
+      let state = currentBookStructure.itemMap[key].state;
+      let labels = currentBookStructure.itemMap[key].label;
+      let indent = currentBookStructure.itemMap[key].indent;
+      let label = labels[lang];
+      if (!label) {
+        label = labels[Object.keys(labels)[0]];
+      }
+
+      if (indent > path.length) path.push(lastLabel);
+      if (indent < path.length) path.pop();
+
+      menuIndex[key] = {
+        name: label,
+        state: state,
+        path: path.slice()
+      };
+
+      lastLabel = label;
+      key = currentBookStructure.itemMap[key].next;
+    } while(key);
+
+    // also go through hidden pages
+    Object.keys(currentBookStructure.itemMap).filter((key) => !menuIndex[key]).forEach(function(key) {
       let state = currentBookStructure.itemMap[key].state;
       let labels = currentBookStructure.itemMap[key].label;
       let label = labels[lang];
@@ -332,9 +373,11 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       }
       menuIndex[key] = {
         name: label,
-        state: state
+        state: state,
+        path: ["Hidden"]
       };
     });
+
     // console.log(menuIndex);
   };
 
@@ -374,7 +417,8 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
       for (const pageCode of itemsByPriorities.slice(0, 15)) {
           let pageName = options[pageCode].name;
-          let item = $('<div>' + pageName + '</div>');
+          let path = options[pageCode].path.join(" &raquo; ");
+          let item = $('<div>' + pageName + '<span>' + path + '</span></div>');
           if (count === 0) {
             item = item.addClass("autocomplete-active");
             current = 0;
@@ -428,6 +472,12 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     let origOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
 
+      if (url.includes("loadBook")) {
+        this.addEventListener('load', function () {
+          currentBook = JSON.parse(this.responseText);
+          searchInit();
+        });
+      }
       if (url.includes("loadPage")) {
         this.addEventListener('load', function () {
           currentPageData = JSON.parse(this.responseText);
@@ -437,7 +487,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       if (url.includes("getBookStructure")) {
         this.addEventListener('load', function () {
           currentBookStructure = JSON.parse(this.responseText);
-          console.log(currentBookStructure);
+          // console.log(currentBookStructure);
           searchInit();
         });
       }
