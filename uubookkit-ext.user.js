@@ -202,6 +202,110 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   let ctrlKey = false;
   let ctrlKeyTimeout = null;
   let copyMenuVisible = false;
+  let supportedSubSectionTypes2 = [ "uu5-richtext-block", "uu-uuapp-designkit-business-use-case-list", "uucontentkit-table", "uu-uuapp-designkit-embedded-text"];
+  let supportedSubSectionTypes1 = [ "uu5-bricks-section" ];
+
+  /** Returns an instance of the Update (or Edit) button */
+  function getUpdateButton() {
+    return $("div.uu-bookkit-book-top div.uu-bookkit-control-bar-executives > button");
+  }
+
+  /**
+   * Open sub-sections. This does not work in 100% cases, because of lazy loading of some components.
+   * Sub-sections are opened in 2 steps - in first step, only sub-sections from supportedSubSectionTypes1 are opened.
+   * Then sub-sections from supportedSubSectionTypes2.
+   */
+  function openSubSections(counter, supportedSubSectionTypes) {
+    let buttons = $("span.with-buttons > span.uudcc-bricks-component-wrapper-main-controls-div > button");
+    let clicked = false;
+    buttons.each((index, item) => {
+      let componentTypeDiv = $(item).parent().parent().children("div");
+      if (componentTypeDiv.length) {
+        let cls = componentTypeDiv.attr("class");
+        let supported = false;
+        for(let i = 0; i < supportedSubSectionTypes.length; i++) {
+          if (cls.includes(supportedSubSectionTypes[i])) {
+            supported = true;
+            break;
+          }
+        }
+        if (supported) {
+          try {
+            item.click();
+          } catch (e) {} // Ignore any errors
+          clicked = true;
+        }
+      }
+    });
+
+    if (counter < 2) { // Wait up to 2 times before continuing with next step
+      setTimeout(() => openSubSections(clicked ? 0 : counter + 1, supportedSubSectionTypes), 1000);
+    } else if (supportedSubSectionTypes === supportedSubSectionTypes1) {
+      console.log("Opening of sub-sections step 1 finished");
+      setTimeout(() => openSubSections(0, supportedSubSectionTypes2), 1000);
+    } else {
+      console.log("Opening of sub-sections step 2 finished");
+    }
+  }
+
+  /** Waits for all the sections to be in edit mode and then starts edit mode for all sub-sections */
+  function waitForSectionsEditMode(initialized) {
+    let keys = Object.keys(initialized);
+    let allInitialized = true;
+    for(let i = 0; i < keys.length; i++) {
+      let key = keys[i];
+      if (!initialized[key]) {
+        let element = $("#" + key + " > .color-schema-green");
+        if (element.length) {
+          while (!element.attr("class").includes("uudcc-bricks-basic-section")) element = element.parent();
+          if (element.find("div.dcc-content-root-edit-mode").length && element.find("div.dcc-content-root-edit-mode > span > span > div.uu5-common-div").length &&
+             element.find("div.dcc-content-root-edit-mode > span > span > span.uudcc-bricks-component-wrapper-main-controls-div > button").length) {
+            initialized[key] = true;
+          }
+        } else {
+          allInitialized = false;
+          console.log("Waiting for initialization of " + key);
+        }
+      }
+    }
+    if (!allInitialized) {
+      setTimeout(() => waitForSectionsEditMode(initialized), 1000);
+    } else {
+      setTimeout(() => openSubSections(0, supportedSubSectionTypes1), 1000);
+    }
+  }
+
+  /** Waits for the edit mode to be started and then starts edit mode for all sections */
+  function postStartEditMode(openSubsections) {
+    if (!isInEditMode()) {
+      setTimeout(() => postStartEditMode(openSubsections), 1000);
+      return;
+    }
+    let initialized = {};
+    let items = $("div.uudcc-bricks-toolbar-controls > button.color-schema-grey-rich").each((index, item) => {
+      initialized[item.parentNode.id] = false;
+      item.click();
+    });
+    if (openSubsections) {
+      waitForSectionsEditMode(initialized);
+    }
+  }
+
+  /** Starts edit mode and runs post-actions, which set edit mode for all sections and sub-sections */
+  function startEditMode(openSubsections) {
+    let activeElement = document.activeElement;
+    if (activeElement.tagName !== "INPUT" && activeElement.tagName !== "TEXTAREA") { // Do not start edit mode, when typing text
+      getUpdateButton().click();
+      postStartEditMode(openSubsections);
+    }
+  }
+
+  /** Checks, if the edit mode is currently on */
+  function isInEditMode() {
+    return $(".uudcc-bricks-toolbar").length > 0;
+  }
+
+
 
   // init of each bookkit page
   let initPage = function () {
@@ -656,28 +760,45 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   });
 
   $(document).keydown(function (e) {
-    // console.log(e.key);
+    //console.log(e);
 
-    // close edit dialog on ESC
-    if (e.key === "Escape") {
-      click($(".uu5-bricks-modal-l .uu5-bricks-modal-header-close"));
+    switch (e.key) {
+      case "e": // Start edit mode
+      case "E":
+        if (!isInEditMode()) {
+          startEditMode(e.shiftKey);
+        }
+        break;
+
+      case "s": // With Ctrl - end edit mode and save data
+      case "S":
+        if (e.ctrlKey && isInEditMode()) {
+          getUpdateButton().focus();
+          getUpdateButton().click();
+          e.preventDefault(); // Do not trigger the default browser save handler
+        }
+        break;
+
+      case "Escape": // close edit dialog on ESC
+        click($(".uu5-bricks-modal-l .uu5-bricks-modal-header-close"));
+        break;
+
+      case "F4":
+        reloadCurrentPage();
+        break;
+
+      case "Control":
+        ctrlKey = true;
+        if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
+        ctrlKeyTimeout = setTimeout(() => $(document).trigger({type: 'keyup', key: 'Control'}), 1000);
+        if (!copyMenuVisible) showCopyOptionsInMenu();
+        break;
     }
-
-    if (e.key === "F4") {
-      reloadCurrentPage();
-    }
-
     // if (e.key === "n" && e.altKey === true) {
     //   window.scrollTo(0, 0);
     //   $("#autocomplete-input").select();
     // }
 
-    if (e.key === "Control") {
-      ctrlKey = true;
-      if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
-      ctrlKeyTimeout = setTimeout(() => $(document).trigger({type: 'keyup', key: 'Control'}), 1000);
-      if (!copyMenuVisible) showCopyOptionsInMenu();
-    }
 
     /* not working correctly
     // save edit dialog on CTRL + ENTER
@@ -689,11 +810,12 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
   $(document).keyup(function (e) {
     // console.log(e.key);
-
-    if (e.key === "Control") {
-      ctrlKey = false;
-      if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
-      if (copyMenuVisible) hideCopyOptionsInMenu();
+    switch (e.key) {
+      case "Control":
+        ctrlKey = false;
+        if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
+        if (copyMenuVisible) hideCopyOptionsInMenu();
+        break;
     }
   });
 
