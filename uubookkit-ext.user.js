@@ -8,6 +8,7 @@
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @match        https://uuapp.plus4u.net/uu-bookkit-maing01/*
 // @match        https://docs.plus4u.net/book*
+// @match        https://docs.plus4u.net/uaf/*
 // @grant        GM_addStyle
 // @require      http://code.jquery.com/jquery-2.1.4.min.js
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.js
