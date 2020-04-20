@@ -56,8 +56,8 @@ GM_addStyle(`
 #autocomplete-list div {
   padding: 5px;
   cursor: pointer;
-  background-color: #fff; 
-  border-bottom: 1px solid #d4d4d4; 
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
   margin-left: auto;
   margin-right: auto;
   color: black;
@@ -72,13 +72,13 @@ GM_addStyle(`
 
 #autocomplete-list div:hover {
   /*when hovering an item:*/
-  background-color: #e9e9e9; 
+  background-color: #e9e9e9;
 }
 
 #autocomplete-list .autocomplete-active {
   /*when navigating through the items using the arrow keys:*/
-  background-color: DodgerBlue !important; 
-  color: #ffffff; 
+  background-color: DodgerBlue !important;
+  color: #ffffff;
 }
 #autocomplete-list .autocomplete-active span {
   color: #cccccc;
@@ -221,14 +221,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       let componentTypeDiv = $(item).parent().parent().children("div");
       if (componentTypeDiv.length) {
         let cls = componentTypeDiv.attr("class");
-        let supported = false;
-        for(let i = 0; i < supportedSubSectionTypes.length; i++) {
-          if (cls.includes(supportedSubSectionTypes[i])) {
-            supported = true;
-            break;
-          }
-        }
-        if (supported) {
+        if (supportedSubSectionTypes.find(item => cls.includes(item))) {
           try {
             item.click();
           } catch (e) {} // Ignore any errors
@@ -440,7 +433,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     // not ready yet
     if (!currentBookStructure.itemMap || !currentBook.home) return;
 
-    let lang = $(".uu-bookkit-book-top .uu5-bricks-language-selector-code-text").text();
+    let lang = currentBook.primaryLanguage;
     let path = [];
     let lastLabel = null;
 
@@ -456,7 +449,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       }
 
       if (indent > path.length) path.push(lastLabel);
-      if (indent < path.length) path.pop();
+      while (indent < path.length) path.pop();
 
       menuIndex[key] = {
         name: label,
@@ -482,8 +475,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
         path: ["Hidden"]
       };
     });
-
-    // console.log(menuIndex);
   };
 
   // Source: https://www.w3schools.com/howto/howto_js_autocomplete.asp
@@ -504,23 +495,15 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
       let count = 0;
       let keys = Object.keys(options);
-      const similiarWords = this.value.trim(/\s+/).split(/\s+/).map(v => v.split("").join(".?"));
-      const matchRegExp = new RegExp("(" + similiarWords.join("|") + ")", "gmi");
 
-      // Set priorities
-      const itemsByPriorities = keys.sort(
-          (i1, i2) => {
-              const matches1 = options[i1].name.match(matchRegExp) || [];
-              const matches2 = options[i2].name.match(matchRegExp) || [];
+      // Select all names which include all words from the requested list
+      this.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(" ").forEach(item => {
+        if (item) keys = keys.filter(key => options[key].name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(item));
+      });
+      // Order by complete path
+      keys = keys.sort((a, b) => options[a].path.join("#").localeCompare(options[b].path.join("#")));
 
-              const weightPriority1 = [...new Set(matches1)];
-              const weightPriority2 = [...new Set(matches2)];
-
-              return (matches2.length + 10 * weightPriority2.length) - (matches1.length + 10 * weightPriority1.length);
-          }
-      );
-
-      for (const pageCode of itemsByPriorities.slice(0, 15)) {
+      for (const pageCode of keys.slice(0, 15)) {
           let pageName = options[pageCode].name;
           let path = options[pageCode].path.join(" &raquo; ");
           let item = $('<div>' + pageName + '<span>' + path + '</span></div>');
@@ -531,6 +514,8 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
           item.click(function() {
             $("#autocomplete-input").val("");
             gotoPage(pageCode);
+            $("span.mdi-home").parent().focus();
+            Array.prototype.slice.call(document.querySelectorAll("a.plus4u5-app-go-to-page-link")).filter(item => item.href.includes(pageCode))[0].scrollIntoView();
           });
           listItems.append(item);
           count++;
@@ -538,7 +523,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
 
     });
     input.keydown(function(e) {
-      // console.log(e.key);
       if (e.key === "ArrowDown") {
         current++;
         markActive();
@@ -652,7 +636,6 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   };
 
   let gotoPage = function(pageCode) {
-    console.log("Goto code ", pageCode);
     if (ctrlKey) {
       let url = $(".plus4u5-app-go-to-page-link").first().attr("href") + "/page?code=" + pageCode;
       window.open(url, '_blank');
@@ -778,6 +761,14 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
         }
         break;
 
+      case "q":
+      case "Q":
+        if (e.ctrlKey) {
+          window.scrollTo(0, 0);
+          $("#autocomplete-input").select();
+        }
+        break;
+
       case "Escape": // close edit dialog on ESC
         click($(".uu5-bricks-modal-l .uu5-bricks-modal-header-close"));
         break;
@@ -792,12 +783,8 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
         ctrlKeyTimeout = setTimeout(() => $(document).trigger({type: 'keyup', key: 'Control'}), 1000);
         if (!copyMenuVisible) showCopyOptionsInMenu();
         break;
-    }
-    // if (e.key === "n" && e.altKey === true) {
-    //   window.scrollTo(0, 0);
-    //   $("#autocomplete-input").select();
-    // }
 
+    }
 
     /* not working correctly
     // save edit dialog on CTRL + ENTER
@@ -947,4 +934,3 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   }
 
 })();
-
