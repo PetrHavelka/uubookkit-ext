@@ -185,6 +185,15 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   color: red;
 }
 
+div.toc ol a {
+  color: #1976d2;
+  cursor: pointer;
+}
+
+div.toc li {
+  display: block
+}
+
 `);
 
 
@@ -297,6 +306,67 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     return $(".uudcc-bricks-toolbar").length > 0;
   }
 
+  /** Adds table of contents to the page */
+  function addToc() {
+    let minLevel = 6;
+    let first = true;
+    // Find minimum level
+    $("h1, h2, h3, h4, h5, h6").each((index, item) => {
+      if (first) first = false; else {
+        let currentLevel = parseInt(item.tagName.substr(1));
+        if (currentLevel < minLevel) minLevel = currentLevel;
+      }
+    });
+
+    // Generate ToC
+    first = true;
+    let result = "<div class='toc'>";
+    let currentLevel = minLevel - 1;
+    let headerFound = false;
+    let counters = [0, 0, 0, 0, 0, 0];
+
+    $("h1, h2, h3, h4, h5, h6").each((index, item) => {
+      if (first) first = false; else {
+        let parsedLevel = parseInt(item.tagName.substr(1));
+        while (currentLevel > parsedLevel) {
+          result += "</li></ol>";
+          currentLevel--;
+        }
+        if (currentLevel == parsedLevel) result += "</li>";
+
+        while (currentLevel < parsedLevel - 1) {
+          result += "<ol><li>";
+          currentLevel++;
+          counters[currentLevel - minLevel] = 1;
+        }
+        if (currentLevel < parsedLevel) {
+          result += "<ol>";
+          currentLevel++;
+          counters[currentLevel - minLevel] = 0;
+        }
+        counters[currentLevel - minLevel]++;
+
+        if (item.className.includes("numbered-header")) {
+          item.innerText = item.innerText.substr(item.innerText.indexOf(" ") + 1);
+        } else {
+          item.className += " numbered-header";
+        }
+        item.innerText = counters.slice(0, currentLevel - minLevel + 1).join(".") + ". " + item.innerText;
+        headerFound = true;
+        result += "<li><a onclick=\"document.getElementById('" + item.id + "').scrollIntoView()\">" + item.innerText + "</a>";
+      }
+    });
+
+    // There was something found, so add it to the page
+    if (headerFound) {
+      while (currentLevel-- >= minLevel) result += "</li></ol>";
+      result += "</div>";
+      let currentToc = $("div.toc");
+      if (currentToc.length > 0) currentToc.remove();
+      $(result).insertAfter($("div.uu-bookkit-page-ready > h1"));
+    }
+  }
+
 
 
   // init of each bookkit page
@@ -304,7 +374,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     let page = $(".uu-bookkit-page-ready");
     // if page not ready do it later
     if (!page.length) {
-      setTimeout(initPage, 1000);
+      setTimeout(initPage, 200);
       return;
     }
 
@@ -349,10 +419,14 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
     // add title attributes to the navigation tree items
     addNavigationTitles();
 
+    // add table of content
+    addToc();
+
     initAutocomplete($("#autocomplete-input"), menuIndex);
 
     // mark page as ready
     page.addClass("bookkit-ext-page-done");
+
   };
 
   // first init of whole webpage
@@ -605,10 +679,10 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
   let clickLinkByName = function (name) {
     // console.log('Click link by name = "' + name + '"')
 
-    // click to "Obsah str√°nky" to expand menu
+    // click to "Obsah str·nky" to expand menu
     $('button.uu5-bricks-dropdown-button').each(function () {
       let item = $(this);
-      if (item.text() == "Obsah str√°nky" || item.text() == "Page body") item.click();
+      if (item.text() == "Obsah str·nky" || item.text() == "Page body") item.click();
     });
 
     // find all links in control menu
@@ -877,7 +951,7 @@ ol.uu5-bricks-ol ul.uu5-bricks-ul {
       olElement.insertAdjacentHTML('beforebegin', `<div class="bookkit-ext-copy-scenario-panel uu5-common-div uu-uuapp-designkit-embedded-text-header-bar">
             <button class="bookkit-ext-copy-scenario-button uu5-bricks-button uu5-bricks-button-m uu5-bricks-button-transparent" type="button">
                 <span class="uu5-bricks-icon mdi mdi-content-copy"></span>
-                <span class="bookkit-ext-copy uu5-bricks-span uu5-bricks-lsi-item">Kop√≠rovat programov√Ω koment√°≈ô</span>
+                <span class="bookkit-ext-copy uu5-bricks-span uu5-bricks-lsi-item">KopÌrovat programov˝ koment·¯</span>
             </button>
         </div>`);
 
