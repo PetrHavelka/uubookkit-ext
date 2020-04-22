@@ -19,7 +19,7 @@ It also adds following keyboard shortcuts:
 
 # Install as a User Script - Tampermonkey
 1. Add https://tampermonkey.net/ into your browser
-2. Install User script from this URL: [uubookkit-ext.user.js](https://github.com/pavel-zeman/uubookkit-ext/raw/master/uubookkit-ext.user.js)
+2. Install User script from this URL: [uubookkit-ext.user.js](https://github.com/PetrHavelka/uubookkit-ext/raw/master/uubookkit-ext.user.js)
 
 # Configuration
 - In case of [uuDockitHelper](https://github.com/jiridudekusy/uuDockitHelper) is executed on different IP or port than http://localhost:4323/vendor-app-subapp/0-0/editor (the default port could be 1234) please edit the `mdUrl` in script. 

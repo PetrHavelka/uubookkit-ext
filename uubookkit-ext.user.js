@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.11.1
+// @version      0.12.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -25,12 +25,14 @@ let mdUrl = 'http://localhost:4323/vendor-app-subapp/0-0/editor';
 GM_addStyle(`
 .bookkit-ext-edit,
 .bookkit-ext-refresh,
+.bookkit-ext-toc,
 .bookkit-ext-page-reload {
   margin-left: 0.5em;
   font-size: 24px;
   cursor: pointer;
 }
-.bookkit-ext-refresh {
+.bookkit-ext-refresh,
+ bookkit-ext-top {
   font-size: 22px;
 }
 .bookkit-ext-page-reload {
@@ -197,6 +199,7 @@ div.toc li {
 
 `);
 
+const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
 
 (function () {
@@ -421,7 +424,7 @@ div.toc li {
     addNavigationTitles();
 
     // add table of content
-    addToc();
+    if (localStorage.getItem(LS_TOC_KEY) == "true") addToc();
 
     initAutocomplete($("#autocomplete-input"), menuIndex);
 
@@ -446,6 +449,8 @@ div.toc li {
 
     // update HTML - add icons and links
     let refreshIcon = '<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-refresh"></span>';
+    let toc = '<span class="uu5-bricks-icon mdi mdi-table-of-contents bookkit-ext-toc"></span>';
+    title.after(toc);
     title.after(refreshIcon);
 
     // add state of page into menu
@@ -680,10 +685,10 @@ div.toc li {
   let clickLinkByName = function (name) {
     // console.log('Click link by name = "' + name + '"')
 
-    // click to "Obsah str·nky" to expand menu
+    // click to "Obsah str√°nky" to expand menu
     $('button.uu5-bricks-dropdown-button').each(function () {
       let item = $(this);
-      if (item.text() == "Obsah str·nky" || item.text() == "Page body") item.click();
+      if (item.text() == "Obsah str√°nky" || item.text() == "Page body") item.click();
     });
 
     // find all links in control menu
@@ -782,6 +787,16 @@ div.toc li {
     if ($(e.target).hasClass("bookkit-ext-refresh")) {
       // init page
       initPage();
+      return;
+    }
+
+    if ($(e.target).hasClass("bookkit-ext-toc")) {
+      // init page
+      let toc = localStorage.getItem(LS_TOC_KEY) == "true";
+      localStorage.setItem(LS_TOC_KEY, !toc);
+
+      if (!toc) addToc();
+      else reloadCurrentPage();
       return;
     }
 
@@ -952,7 +967,7 @@ div.toc li {
       olElement.insertAdjacentHTML('beforebegin', `<div class="bookkit-ext-copy-scenario-panel uu5-common-div uu-uuapp-designkit-embedded-text-header-bar">
             <button class="bookkit-ext-copy-scenario-button uu5-bricks-button uu5-bricks-button-m uu5-bricks-button-transparent" type="button">
                 <span class="uu5-bricks-icon mdi mdi-content-copy"></span>
-                <span class="bookkit-ext-copy uu5-bricks-span uu5-bricks-lsi-item">KopÌrovat programov˝ koment·¯</span>
+                <span class="bookkit-ext-copy uu5-bricks-span uu5-bricks-lsi-item">Kop√≠rovat programov√Ω koment√°≈ô</span>
             </button>
         </div>`);
 
