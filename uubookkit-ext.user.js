@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.12.0
+// @version      0.13.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -194,7 +194,7 @@ div.toc ol a {
 }
 
 div.toc li {
-  display: block
+  display: block;
 }
 
 `);
@@ -308,6 +308,11 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   /** Checks, if the edit mode is currently on */
   function isInEditMode() {
     return $(".uudcc-bricks-toolbar").length > 0;
+  }
+
+  /** Check, if modal window is open */
+  function isModalOpen() {
+    return $(".uu5-bricks-modal-overflow.uu5-bricks-modal-isfooter").length > 0;
   }
 
   /** Adds table of contents to the page */
@@ -463,13 +468,14 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   let colorizeMenu = function() {
     $(".plus4u5-app-menu-link").each(function(item) {
       let menuText = $(this).text().replace(/\u200B/g, "");
-      if (menuText.includes("uuSubApp") || menuText.includes("uuProduct") || menuText.includes("uuScript") || menuText.includes("uuLib")) {
+      if (menuText.includes("uuSubApp") || menuText.includes("uuProduct") || menuText.includes("uuScript")
+          || menuText.includes("uuLib") || menuText.includes("uuAppServerLibrary")) {
         $(this).addClass("bookkit-ext-uusubapp");
       }
       if (menuText.includes("Business Mod")) {
         $(this).addClass("bookkit-ext-business");
       }
-      if (menuText.includes("uuCMD") || menuText.includes("uuCmd")) {
+      if (menuText.includes("uuCMD") || menuText.includes("uuCmd") || menuText.includes("uuCommands")) {
         $(this).addClass("bookkit-ext-cmd");
       }
       if (menuText.includes("ObjectStore") || menuText.includes("BinaryStore") || menuText.includes("Database")) {
@@ -656,12 +662,30 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
       if (url.includes("getBookStructure")) {
         this.addEventListener('load', function () {
           currentBookStructure = JSON.parse(this.responseText);
-          // console.log(currentBookStructure);
           searchInit();
         });
       }
       origOpen.apply(this, arguments);
     };
+
+    const fetch = unsafeWindow.fetch;
+    unsafeWindow.fetch = (...args) =>
+        (async args => {
+          const response = await fetch(...args);
+          if (response.url.includes("loadBook")) {
+            currentBook = await response.clone().json();
+            searchInit();
+          }
+          if (response.url.includes("loadPage")) {
+            currentPageData = await response.clone().json();
+            initPage();
+          }
+          if (response.url.includes("getBookStructure")) {
+            currentBookStructure = await response.clone().json();
+            searchInit();
+          }
+          return response;
+        })(args);
   };
 
   // do inject
@@ -734,12 +758,12 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   };
 
   let getGTP = function(text, url) {
-    return "<uu5string/><UuBookKit.Bricks.GoToPageLink page=\"" + getPageCode(url) + "\">" + text + "</UuBookKit.Bricks.GoToPageLink>";
+    return "<uu5string/><UuBookKit.Bricks.GoToPageLink page=\"" + getPageCode(url) + "\" />";
   };
 
   let handleClickToCopyOptions = function(e) {
     let link = $(this).parent().find(".plus4u5-app-go-to-page-link");
-    let url = document.location.origin + link.attr("href");
+    let url = link.attr("href");
     let text = link.text();
 
     if ($(e.target).hasClass("cc")) {
@@ -802,7 +826,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
     // click to page title is linking to knowledge base
     if ($(e.target).parent().hasClass("uu-bookkit-book-top-text")) {
-      window.open('https://docs.plus4u.net/book/page?code=books', '_blank');
+      window.open('https://docs.plus4u.net/libraries', '_blank');
     }
 
     // click to "copy JIRA link"
@@ -837,7 +861,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     switch (e.key) {
       case "e": // Start edit mode
       case "E":
-        if (!isInEditMode()) {
+        if (!isModalOpen() && !isInEditMode()) {
           startEditMode(e.shiftKey);
         }
         break;
