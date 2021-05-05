@@ -505,8 +505,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     let linkUrlPrefix = $(".plus4u5-app-go-to-page-link").first().attr("href") + "/page?code=";
     $(".uu5-bricks-section .uu5-bricks-link").each(function(item) {
       let linkUrl = $(this).attr("href");
-      let offset = linkUrl.indexOf(linkUrlPrefix);
-      if (offset > -1) {
+      if (linkUrl && linkUrl.indexOf(linkUrlPrefix) > -1) {
         let pageCode = getPageCode(linkUrl);
         if (menuIndex[pageCode] === undefined) {
           $(this).addClass("bookkit-ext-invalid-link").attr("title", `Page with code ${pageCode} do not exists.`);
