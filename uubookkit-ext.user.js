@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.13.1
+// @version      0.13.2
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -550,15 +550,18 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     Object.keys(currentBookStructure.itemMap).filter((key) => !menuIndex[key]).forEach(function(key) {
       let state = currentBookStructure.itemMap[key].state;
       let labels = currentBookStructure.itemMap[key].label;
-      let label = labels[lang];
-      if (!label) {
-        label = labels[Object.keys(labels)[0]];
+      // because there is some strange page in MARI (sendPricesToEtpDa) that has invalid data
+      if (labels && labels.length > 1) {
+        let label = labels[lang];
+        if (!label) {
+          label = labels[Object.keys(labels)[0]];
+        }
+        menuIndex[key] = {
+          name: label,
+          state: state,
+          path: ["Hidden"]
+        };
       }
-      menuIndex[key] = {
-        name: label,
-        state: state,
-        path: ["Hidden"]
-      };
     });
   };
 
