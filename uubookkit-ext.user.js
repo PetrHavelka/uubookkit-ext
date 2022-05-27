@@ -516,14 +516,14 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
   let searchInit = function () {
     // not ready yet
-    if (!currentBookStructure.itemMap || !currentBook.home) return;
+    if (!currentBookStructure.itemMap || !currentBook.data.home) return;
 
     let lang = currentBook.primaryLanguage;
     let path = [];
     let lastLabel = null;
 
     // go through all pages from menu
-    let key = currentBook.home;
+    let key = currentBook.data.home;
     do {
       let state = currentBookStructure.itemMap[key].state;
       let labels = currentBookStructure.itemMap[key].label;
@@ -649,7 +649,8 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     let origOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
 
-      if (url.includes("loadBook")) {
+
+      if (url.includes("sys/uuAppWorkspace/load")) {
         this.addEventListener('load', function () {
           currentBook = JSON.parse(this.responseText);
           searchInit();
@@ -674,7 +675,8 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     unsafeWindow.fetch = (...args) =>
         (async args => {
           const response = await fetch(...args);
-          if (response.url.includes("loadBook")) {
+
+          if (response.url.includes("sys/uuAppWorkspace/load")) {
             currentBook = await response.clone().json();
             searchInit();
           }
