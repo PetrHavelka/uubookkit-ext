@@ -312,7 +312,14 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
   /** Check, if modal window is open */
   function isModalOpen() {
-    return $(".uu5-bricks-modal-overflow.uu5-bricks-modal-isfooter").length > 0;
+    const isUu5g04ModalOpen = $(".uu5-bricks-modal")
+      .toArray()
+      .some(({ classList }) => !classList.contains("uu5-common-hidden"));
+    const isUu5g05ModalOpen = $("dialog")
+      .toArray()
+      .some(({ open }) => open);
+
+    return isUu5g04ModalOpen || isUu5g05ModalOpen;
   }
 
   /** Adds table of contents to the page */
